@@ -1,20 +1,5 @@
 # ROS2 Info ⊙
-        ╔══════════════════════════════════════════════════════════════════════===════╗
-        ║                                                                             ║
-        ║    ██████╗  ██████╗ ███████╗    ██████╗     ██╗   ███╗   ██╗███████╗ ██████╗║
-        ║    ██╔══██╗██╔═══██╗██╔════╝    ╚════██╗    ██╔╝  ████╗  ██║██╔════╝██╔═══██╗
-        ║    ██████╔╝██║   ██║███████╗     █████╔╝    ██╔╝  ██╔██╗ ██║█████╗  ██║   ██║
-        ║    ██╔══██╗██║   ██║╚════██║    ██╔═══╝     ██╔╝  ██║╚██╗██║██╔══╝  ██║   ██║
-        ║    ██║  ██║╚██████╔╝███████║    ███████╗    ██╔╝  ██║ ╚████║██║     ╚██████╔╝
-        ║    ╚═╝  ╚═╝ ╚═════╝ ╚══════╝    ╚══════╝    ╚═╝    ╚═╝  ╚═══╝╚═╝      ╚═════╝ 
-        ║            ~"Created by roboticists, for roboticists   ║                    ║
-        ║           ⬡  The fastfetch you always wanted — for ROS2  ⬡                 ║
-        ╚═════════════════════════════════════════════════════════════════════===═════╝
-
-        
-                            A beautiful, interactive Fastfetch-like system information tool and web dashboard built specifically for **ROS2 developers**
 A fastfetch-style ROS2 workstation lens: **know what, where, and which is working**.
-
 
 ![ROS2 Info demo](asset/howitwork.gif)
 
@@ -108,36 +93,6 @@ All images and videos live in the asset folder and are used directly in this REA
 
 ![Info view](asset/info.png)
 
-<<<<<<< HEAD
-Interactive TUI: A built-in terminal user interface powered by click and rich to selectively view different system panels.
-
-🌐 Web Dashboard (Inspired by ros.org)
-Elegant, Light-Themed Web UI: A modern dashboard that live-updates your system and ROS2 stats.
-
-Community Integration: Seamlessly embeds the official ROS2 community blog for news and updates.
-## ⬡ Screenshots
-
-<div align="center">
-
-<!-- Screenshot 1 — main dashboard -->
-<img src="https://github.com/zang7777/ros2_info/blob/main/Screenshot%20from%202026-03-11%2011-41-01.png" width="800"/>
-
-<br/>
-
-<!-- Screenshot 2 — live nodes/topics -->
-<img src="https://github.com/zang7777/ros2_info/blob/main/Screenshot%20from%202026-03-11%2011-41-29.png" width="800"/>
-
-<br/>
-
-<!-- Screenshot 3 — theme or web dashboard -->
-<img src="https://github.com/zang7777/ros2_info/blob/main/Screenshot%20from%202026-03-11%2011-41-57.png" width="800"/>
-
-</div>
-
-
-
-### 🚀 How to Use
-=======
 ## Install (all packages)
 ```bash
 # Create and activate a venv (optional but recommended)
@@ -147,7 +102,6 @@ source /opt/ros/jazzy/setup.zsh
 # Install the project
 pip install -e src/ros2_fastfetch
 ```
->>>>>>> d272d78 (v2.0.0)
 
 ## Run
 *(Ensure you have sourced your ROS2 environment first: `source /opt/ros/jazzy/setup.bash`)*
@@ -159,40 +113,7 @@ ros2_info terminal
 ros2_info web
 ```
 
-<<<<<<< HEAD
-### 2. Live Watch Mode
-Keep the terminal open and automatically refresh the runtime stats (nodes/topics) every 2 seconds:
-```bash
-ros2 run ros2_info ros2_info --watch 2
-```
-
-### 3. Interactive Menu(BEST RECOMMENDED)
-Don't want to type flags? Open the interactive terminal UI to browse your system:
-```bash
-ros2 run ros2_info ros2_info --interactive
-```
-
-### 4. 🌐 Web Dashboard
-Launch a rich, interactive web UI that you can view in your browser (defaults to `http://localhost:8099`):
-```bash
-ros2 run ros2_info ros2_info web
-```
-
-### 5. Other Commands
-```bash
-ros2 run ros2_info ros2_info nodes     # List all active nodes
-ros2 run ros2_info ros2_info topics    # List all active topics
-ros2 run ros2_info ros2_info packages  # List installed ROS2 packages
-ros2 run ros2_info ros2_info env       # Show ROS2 environment variables
-```
-
-*Built with Python, Click, Rich, and Flask. Designed for roboticists.*
-
----
-# ros2_info
-=======
 ## Future updates (coming soon)
 - More themes and layout presets
 - Expanded web dashboard telemetry
 - Additional workspace and build insights
->>>>>>> d272d78 (v2.0.0)
