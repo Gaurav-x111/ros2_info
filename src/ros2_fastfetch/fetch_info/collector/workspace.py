@@ -3,22 +3,8 @@ ROS2 Workspace Information Collector
 Scans for colcon workspaces, local packages, build info
 """
 
-import os
-import json
-import subprocess
-from typing import Any, List, Dict, Optional
 from pathlib import Path
-
-
-def _run(cmd: list, cwd: str = None, timeout: int = 5) -> str:
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True,
-            timeout=timeout, cwd=cwd
-        )
-        return result.stdout.strip()
-    except Exception:
-        return ""
+from typing import Any, Dict, List
 
 
 def find_workspaces(max_depth: int = 4) -> List[str]:
@@ -119,28 +105,6 @@ def get_workspace_packages(workspace_path: str) -> Dict[str, Any]:
         "has_build": build_dir.exists(),
         "has_src": src_dir.exists(),
     }
-
-
-def get_colcon_metadata(workspace_path: str) -> Optional[dict]:
-    """Read colcon metadata if available."""
-    meta_path = Path(workspace_path) / ".colcon_install_layout"
-    if meta_path.exists():
-        try:
-            return {"install_layout": meta_path.read_text().strip()}
-        except Exception:
-            pass
-
-    # Try colcon.meta
-    meta_path2 = Path(workspace_path) / "colcon.meta"
-    if meta_path2.exists():
-        try:
-            with open(meta_path2) as f:
-                return json.load(f)
-        except Exception:
-            pass
-
-    return None
-
 
 def get_recently_modified_packages(workspace_path: str, limit: int = 5) -> List[str]:
     """Get recently modified packages in the workspace."""

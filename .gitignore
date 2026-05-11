@@ -1,0 +1,95 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.local
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+
+# Distribution / Packaging
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# ROS2 Specific
+install/
+build/
+log/
+devel/
+*.ros2
+.colcon/
+*.bag
+*.db3
+
+# Project Specific
+generate_climage_assets.py
+*.tmp
+temp/
+cache/
+.cache/
+
+# OS
+.AppleDouble
+.LSOverride
+Thumbs.db
+.directory
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Git
+.git/
+.gitmodules
+build/
+install/
+log/

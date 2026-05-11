@@ -12,6 +12,14 @@ from typing import Optional
 
 
 def _run(cmd: list[str]) -> str:
+    """Execute a shell command and return stdout, silently failing on errors.
+    
+    Args:
+        cmd: Command and arguments as a list
+        
+    Returns:
+        Command stdout as string, or empty string on failure
+    """
     try:
         return subprocess.check_output(cmd, stderr=subprocess.DEVNULL, text=True).strip()
     except Exception:
@@ -172,6 +180,52 @@ def get_python_version() -> str:
     return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 
 
+def get_temperatures() -> dict:
+    try:
+        import psutil
+        temps = psutil.sensors_temperatures()
+        if not temps:
+            return {}
+        result = {}
+        for name, entries in temps.items():
+            for entry in entries:
+                if entry.current:
+                    key = name
+                    if entry.label:
+                        key = f"{name} ({entry.label})"
+                    result[key] = round(entry.current, 1)
+        return result
+    except Exception:
+        return {}
+
+
+def get_battery() -> dict:
+    try:
+        import psutil
+        bat = psutil.sensors_battery()
+        if not bat:
+            return {}
+        return {
+            "percent": round(bat.percent, 1),
+            "plugged": bat.power_plugged,
+            "time_left": bat.secsleft if bat.secsleft > 0 else 0
+        }
+    except Exception:
+        return {}
+
+
+def get_network() -> dict:
+    try:
+        import psutil
+        net = psutil.net_io_counters()
+        return {
+            "sent_mb": round(net.bytes_sent / 1e6, 2),
+            "recv_mb": round(net.bytes_recv / 1e6, 2)
+        }
+    except Exception:
+        return {}
+
+
 def collect_all() -> dict:
     return {
         "hostname": get_hostname(),
@@ -184,4 +238,7 @@ def collect_all() -> dict:
         "shell": get_shell(),
         "terminal": get_terminal(),
         "python": get_python_version(),
+        "temperatures": get_temperatures(),
+        "battery": get_battery(),
+        "network": get_network(),
     }

@@ -49,7 +49,46 @@ THEMES = {
         "warn_style": "bold yellow", "error_style": "bold red",
         "dim_style": "#64748B", "highlight": "#F59E0B",
     },
+    "neon": {
+        # Hot pink / electric lime neon-cyberpunk palette
+        "logo_color1": "#F0ABFC", "logo_color2": "#E879F9",
+        "logo_color3": "#D946EF", "logo_color4": "#A21CAF",
+        "logo_color5": "#86198F", "logo_color6": "#4A044E",
+        "subtitle_color": "#C026D3", "panel_border": "#E879F9",
+        "section_title": "bold magenta", "key_style": "bold #F0ABFC",
+        "value_style": "#FAE8FF", "ok_style": "bold #A3E635",
+        "warn_style": "bold #FDE047", "error_style": "bold #F87171",
+        "dim_style": "#9D4EDD", "highlight": "#A3E635",
+    },
+    "solar": {
+        # Warm amber/orange/gold solar flare palette
+        "logo_color1": "#FCD34D", "logo_color2": "#F59E0B",
+        "logo_color3": "#D97706", "logo_color4": "#B45309",
+        "logo_color5": "#92400E", "logo_color6": "#78350F",
+        "subtitle_color": "#FDE68A", "panel_border": "#D97706",
+        "section_title": "bold yellow", "key_style": "bold #FCD34D",
+        "value_style": "#FEF3C7", "ok_style": "bold #34D399",
+        "warn_style": "bold #FB923C", "error_style": "bold #F87171",
+        "dim_style": "#92400E", "highlight": "#FB923C",
+    },
 }
 
-def get_theme(name): return THEMES.get(name, THEMES["default"])
-def list_themes(): return list(THEMES.keys())
+def get_theme(name: str) -> dict:
+    """Get a theme dictionary by name.
+    
+    Args:
+        name: Theme name (default, matrix, ros, ocean, dark, neon, solar)
+        
+    Returns:
+        Dictionary with theme color and style definitions
+    """
+    return THEMES.get(name, THEMES["default"])
+
+
+def list_themes() -> list:
+    """List all available theme names.
+    
+    Returns:
+        List of theme name strings
+    """
+    return list(THEMES.keys())

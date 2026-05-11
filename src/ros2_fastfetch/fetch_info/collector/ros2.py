@@ -3,11 +3,11 @@ ROS2 Information Collector
 Gathers all ROS2 environment, packages, nodes, topics, services, actions
 """
 
+import glob
 import os
-import subprocess
 import shutil
-import json
-from typing import Optional, List, Dict, Any
+import subprocess
+from typing import Dict, List, Optional
 
 
 # Known ROS2 distro release dates and EOL info
@@ -22,7 +22,18 @@ ROS2_DISTROS = {
 }
 
 def _run(cmd: list, timeout: int = 5) -> str:
-    """Run a shell command and return stdout."""
+    """Execute a ROS2 CLI command with timeout protection.
+    
+    Silently handles errors and timeouts to ensure robustness. This function
+    is critical because ROS2 discovery can be slow on systems with many nodes.
+    
+    Args:
+        cmd: Command and arguments as list (e.g., ["ros2", "node", "list"])
+        timeout: Maximum seconds to wait for command completion
+        
+    Returns:
+        Command stdout as string, or empty string if command times out or fails
+    """
     try:
         result = subprocess.run(
             cmd,
@@ -33,8 +44,10 @@ def _run(cmd: list, timeout: int = 5) -> str:
         )
         return result.stdout.strip()
     except subprocess.TimeoutExpired:
+        # ROS2 discovery timeout is expected on slow systems or with many nodes
         return ""
     except Exception:
+        # Command not found, permission denied, etc. - fail gracefully
         return ""
 
 
@@ -50,7 +63,6 @@ def get_distro() -> Optional[str]:
 
     # Try sourced setup files
     for path in ["/opt/ros/*/setup.bash"]:
-        import glob
         matches = glob.glob(path)
         if matches:
             # Extract distro from path like /opt/ros/humble/setup.bash
@@ -62,12 +74,6 @@ def get_distro() -> Optional[str]:
                         return parts[idx + 1]
 
     return None
-
-
-def get_ros_version() -> Optional[str]:
-    """Get ROS_VERSION (1 or 2)."""
-    return os.environ.get("ROS_VERSION", "2")
-
 
 def get_distro_info(distro: Optional[str]) -> dict:
     """Get metadata about a specific distro."""
@@ -199,12 +205,6 @@ def get_active_actions(timeout: int = 3) -> List[str]:
     return [a for a in out.split("\n") if a.strip()]
 
 
-def get_parameters_servers(timeout: int = 3) -> List[str]:
-    """Get nodes that have parameter servers."""
-    nodes = get_active_nodes(timeout)
-    return nodes  # all ROS2 nodes have param servers
-
-
 def get_ros2_environment() -> Dict[str, str]:
     """Get important ROS2 environment variables."""
     important_vars = [
@@ -259,19 +259,6 @@ def get_ros2_log_dir() -> str:
     if os.path.exists(ros_log):
         return ros_log
     return os.path.join(home, ".ros", "log")
-
-
-def get_launch_files_available(distro: Optional[str]) -> int:
-    """Count available launch files in the ROS installation."""
-    if not distro:
-        return 0
-    count = 0
-    ros_share = f"/opt/ros/{distro}/share"
-    if os.path.isdir(ros_share):
-        for root, dirs, files in os.walk(ros_share):
-            if "launch" in root:
-                count += sum(1 for f in files if f.endswith((".py", ".xml", ".yaml")))
-    return count
 
 
 def check_ros2_update_available(distro: Optional[str]) -> Optional[str]:

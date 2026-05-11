@@ -12,8 +12,11 @@
         ╚═════════════════════════════════════════════════════════════════════===═════╝
 
         
-                            A beautiful, interactive Fastfetch-like system information tool and web dashboard built specifically for **ROS2 developers**. 
+                            A beautiful, interactive Fastfetch-like system information tool and web dashboard built specifically for **ROS2 developers**
+A fastfetch-style ROS2 workstation lens: **know what, where, and which is working**.
 
+
+![ROS2 Info demo](asset/howitwork.gif)
 
 <div align="center">
 
@@ -22,44 +25,90 @@
 [![License](https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge)](LICENSE)
 [![colcon](https://img.shields.io/badge/Built%20with-colcon-F97316?style=for-the-badge)](https://colcon.readthedocs.io)
 
-*Born from frustration. Built for roboticists.*
+*Born from curiosity. Built for roboticists.*
 
 </div>
 
-## 💡 Why was this created? 
- 🧠 The Genesis (aka "The Rant")
+## Why this was made
+**Short answer:** this was made to know **what**, **where**, and **which** is working.
 
-Let’s be real. We all love `fastfetch`. It makes us feel like elite hackers when we see that ASCII distro logo and realize we’re only idling at 400MB of RAM on our lean KDE Plasma setup. 🐧💻
+**Fun answer:** I wanted to know how a fastfetch for ROS2 would look, kept working on it, and turned it into a true ROS2 workspace tool.<!--  -->
 
-But as **ROS2 developers**, we live in a simulation of our own creation—a simulation of multiple sourcing environments, competing DDS implementations, and the eternal mystery of "Which Domain ID am I on again?"
+**Joke:** If `ros2 node list` is empty, did the robots take a coffee break or did we forget to source again? ☕🤖
 
-We looked at `fastfetch` and thought:
+## Features
+```
 
-> "This is great, but does it know if my TF-Luna LiDAR node is actually publishing, or if my Link Budget calculation just collapsed in a high-frequency filter failure?" 🤔💥
+╔═══════════════════════════════════════════════════════════════════════════╗
+║               ROS2 Info — Interactive Terminal  v2.0                      ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+        DISCOVERY
+                info                System and ROS2 fastfetch overview
+                nodes               List active nodes
+                topics              List active topics
+                services            List active services
+                actions             List active actions
+                env                 Show ROS2 env variables
+                node info <name>    Show pub/sub/service info
+                interface show <t>  Show message/srv definition
 
-It didn't. And we were tired of the "Sourcing Dance":
-1. Open Terminal A. Source Jazzy. Run bridge.
-2. Open Terminal B. Source Humble. Wonder why nothing talks.
-3. Open Terminal C. Check `ros2 node list`. Realize we aren't sourced at all.
-4. **Kernel Panic (Internal).** 🤯
+        MONITORING
+                echo <topic> [--once]   Stream topic messages
+                hz <topic>              Publish rate
+                bw <topic>              Bandwidth
+                watch [interval]        Live node refresh (2s)
+                ping <node>             Liveness check
+                graph [timeout]         ASCII pub→sub graph
+                rqt                     Launch rqt_graph GUI (bg)
 
-**ROS2 Info** was engineered to synthesize environmental telemetrics with live robotics runtime data. We needed a canonical "Source of Truth" that looked good enough to satisfy our terminal Rice addiction (CLI) while being accessible enough to monitor from a smartphone during hardware integration (WebUI).
+        ACTIONS
+                pub <topic> <type> <yaml> [--once]
+                service call <srv> <type> [<yaml>]
+                param list [/node]
+                param get <node> <param>
+                param set <node> <param> <value>
+                bag record [-a | topics...]
+                bag play <file>
+                bag info <file>
+                launch <pkg> <file> [key:=val ...]
+                run <pkg> <exe> [args...]
+                colcon build [--packages-select pkg]
+                colcon test
 
-We created this because **Efficiency** is not just about compute cycles; it's about **Developer Experience (DX)**.
+        TMUX
+                tmux new [name]     New session
+                tmux list           List sessions
+                tmux attach [name]  Attach session
+                tmux kill <name>    Kill session
+                tmux split          Horizontal split
+                tmux vsplit         Vertical split
+                web [port]          Launch web dashboard (bg)
 
-*(And because looking at distro-aware ASCII art makes the wait for `colcon build` to finish slightly less agonizing.)* 🎨
+        SYSTEM
+                cd <path>           Change directory
+                ls [path]           List files
+                pwd                 Print working directory
+                shell <cmd>         Run any shell command
+                source <file>       Source bash file → env
+                history             Show command history
+                help                Show this help
+                clear               Clear screen
+                quit / exit / q     Exit terminal
+```
 
-🚀 Key Features
-🖥️ CLI (Fastfetch Mode)
-Distro-Aware ASCII Art: Automatically detects your ROS2 distro (Jazzy, Humble, Foxy, etc.) and displays a unique, stylized ASCII logo.
+## Importance
+- Stops the “where am I sourced?” guessing game.
+- Shows live ROS2 health (nodes/topics/services/actions) in one view.
+- Gives a fast, clean picture of workspace + system state during bring-up.
 
-System & Environment Stats: OS version, CPU, Memory usage, ROS2 version, DDS middleware, and Domain ID at a glance.
+## How it works (visuals from assets)
+All images and videos live in the asset folder and are used directly in this README.
 
-Workspace Auto-Detection: Scans and displays your sourced colcon workspaces and their build status.
+![Startup](asset/startup.png)
 
-📊 Real-time Robotics Pulse
-Live Watch Mode: Instantly see active nodes, topics, services, and actions.
+![Info view](asset/info.png)
 
+<<<<<<< HEAD
 Interactive TUI: A built-in terminal user interface powered by click and rich to selectively view different system panels.
 
 🌐 Web Dashboard (Inspired by ros.org)
@@ -88,15 +137,29 @@ Community Integration: Seamlessly embeds the official ROS2 community blog for ne
 
 
 ### 🚀 How to Use
+=======
+## Install (all packages)
+```bash
+# Create and activate a venv (optional but recommended)
+python -m venv .venv
+source .venv/bin/activate
+source /opt/ros/jazzy/setup.zsh     
+# Install the project
+pip install -e src/ros2_fastfetch
+```
+>>>>>>> d272d78 (v2.0.0)
 
+## Run
 *(Ensure you have sourced your ROS2 environment first: `source /opt/ros/jazzy/setup.bash`)*
 
-### 1. Standard Info Fetch
-Run the command directly to print a beautiful fastfetch-style summary to your terminal:
 ```bash
-ros2 run ros2_info ros2_info
+ros2_info --help
+ros2_info
+ros2_info terminal
+ros2_info web
 ```
 
+<<<<<<< HEAD
 ### 2. Live Watch Mode
 Keep the terminal open and automatically refresh the runtime stats (nodes/topics) every 2 seconds:
 ```bash
@@ -127,3 +190,9 @@ ros2 run ros2_info ros2_info env       # Show ROS2 environment variables
 
 ---
 # ros2_info
+=======
+## Future updates (coming soon)
+- More themes and layout presets
+- Expanded web dashboard telemetry
+- Additional workspace and build insights
+>>>>>>> d272d78 (v2.0.0)
