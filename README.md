@@ -9,6 +9,7 @@ A fastfetch-style ROS2 workstation lens: **know what, where, and which is workin
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3B82F6?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge)](LICENSE)
 [![colcon](https://img.shields.io/badge/Built%20with-colcon-F97316?style=for-the-badge)](https://colcon.readthedocs.io)
+[![Version](https://img.shields.io/badge/version-v2.3.0-818CF8?style=for-the-badge)](https://github.com/Gaurav-x111/ros2_info/releases)
 
 *Born from curiosity. Built for roboticists.*
 
@@ -21,11 +22,117 @@ A fastfetch-style ROS2 workstation lens: **know what, where, and which is workin
 
 **Joke:** If `ros2 node list` is empty, did the robots take a coffee break or did we forget to source again? ☕🤖
 
+## 🆕 What's new in v2.3.0
+ 
+| Feature | What it does |
+|---|---|
+| 🌡️ **Hardware Sensor Telemetry** | Real-time CPU, Memory, Battery + hardware temps in the terminal fastfetch and web dashboard |
+| 🖥️ **Interactive Terminal REPL** | Full shell-like REPL with discovery, monitoring, actions, and tmux helpers — all in one place |
+| 🌐 **Web Dashboard v2** | Full interactive dashboard with a built-in terminal and a pure-JS RQT-like node/topic graph |
+| 🕸️ **RQT-like ASCII Graph** | View your pub→sub topology right in the terminal with `graph` |
+| 🎨 **Distro-aware ASCII art** | Auto-renders high-quality distro logos with image fallback support |
+| 🏗️ **Workspace auto-detection** | Always know which overlays are active and which build you're running |
+ 
+---
+ 
+## 🗂️ Workspace Intelligence — Know Your Environment
+ 
+> *"The robots didn't fail. The sourcing did."*
+ 
+ROS2 development isn't just about writing nodes — it's about surviving the environment.
+**ROS2 Info** gives you an instant, accurate snapshot of your entire workspace state the moment you need it.
+ 
+### 🔍 What gets surfaced — instantly
+ 
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  WORKSPACE SNAPSHOT                         ros2_info v2.0.0    ║
+╠══════════════════════════════════════════════════════════════════╣
+║  📦 Distro          ROS2 Jazzy Jalisco                          ║
+║  🔧 DDS Middleware  rmw_fastrtps_cpp                            ║
+║  🌐 Domain ID       ROS_DOMAIN_ID = 42                          ║
+║  🏗️  Workspaces     /opt/ros/jazzy          [system]  ✔ sourced ║
+║                     ~/ros2_ws               [overlay] ✔ sourced ║
+║                     ~/robot_bringup_ws      [overlay] ✔ sourced ║
+║  🔨 Build Status    ros2_ws        → ✔ up to date               ║
+║                     robot_bringup  → ⚠  stale (needs rebuild)  ║
+║  🌡️  Hardware       CPU 34°C  ▓▓▓▓░░░░  42%  |  RAM 6.1/16GB   ║
+║  🧩 Active Nodes    12 nodes alive                              ║
+║  📡 Topics          38 topics publishing                        ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+ 
+### 📊 Full breakdown
+ 
+| Field | What it shows | Why you need it |
+|---|---|---|
+| 📦 **Distro** | Jazzy / Humble / Iron / Rolling | No more `printenv ROS_DISTRO` every session |
+| 🔧 **DDS Middleware** | rmw implementation in use | Spot cross-DDS communication failures instantly |
+| 🌐 **Domain ID** | `ROS_DOMAIN_ID` value | Catch domain mismatches before they waste an hour |
+| 🏗️ **Workspaces** | All sourced overlays + paths | Know your full source chain at a glance |
+| 🔨 **Build Status** | Fresh / stale / never built | No more running stale code from a forgotten build |
+| 🌡️ **Hardware** | CPU temp, usage, RAM, battery | System health at a glance during bringup |
+| 🧩 **Active Nodes** | Live node count | See what's alive the moment you open the terminal |
+| 📡 **Topics** | Publishing topic count | Instant pulse check on your runtime |
+| 🌍 **Env Variables** | Full `ROS_*` dump | Every env variable, one clean view |
+ 
+---
+ 
+### 😤 The sourcing problem — and why it hurts so much
+ 
+Every ROS2 developer knows this exact sequence of suffering:
+ 
+```
+🖥️  Terminal A  →  source /opt/ros/jazzy/setup.bash
+                →  ros2 run bridge bridge_node
+                →  ✔ running
+ 
+🖥️  Terminal B  →  source /opt/ros/humble/setup.bash
+                →  ros2 topic list
+                →  ✔ topics visible... wait, why is nothing talking?
+ 
+🖥️  Terminal C  →  ros2 node list
+                →  (empty)
+                →  💀 wasn't sourced at all
+ 
+🖥️  Terminal D  →  echo $ROS_DOMAIN_ID
+                →  (blank)
+                →  Terminal A is on domain 0. Terminal B is on domain 42.
+                →  🤯 INTERNAL KERNEL PANIC
+```
+ 
+You just lost 45 minutes to environment, not code.
+ 
+### ✅ After ROS2 Info — the new workflow
+ 
+```
+$ ros2_info
+ 
+  ✔ Distro      → Jazzy
+  ✔ Domain ID   → 42 (matches across all terminals)
+  ✔ Workspaces  → 3 sourced, 3 up to date
+  ✔ Nodes       → 12 alive
+  ✔ Topics      → 38 publishing
+  ✔ CPU         → 34°C  42%  |  RAM 6.1 / 16 GB
+ 
+  Everything looks good. Go build robots. 🤖
+```
+ 
+**One command. Full picture. Zero surprises.**
+ 
+---
+ 
+## 🖥️ Features & Interactive Terminal
+ 
+Enter the full REPL with:
+```bash
+ros2_info (**this will appear**)
+``
 ## Features
 ```
 
 ╔═══════════════════════════════════════════════════════════════════════════╗
-║               ROS2 Info — Interactive Terminal  v2.0                      ║
+║               ROS2 Info — Interactive Terminal  v2.0.0                    ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
         DISCOVERY
                 info                System and ROS2 fastfetch overview
@@ -92,7 +199,30 @@ All images and videos live in the asset folder and are used directly in this REA
 ![Startup](asset/startup.png)
 
 ![Info view](asset/info.png)
-
+## 🌐 Web Dashboard — monitor from anywhere
+ 
+```bash
+ros2_info web
+# → Dashboard live at http://localhost:8099
+```
+ 
+Open it on your **phone during hardware integration**. See live workspace state, node health, topic activity, and the interactive RQT-like graph — from anywhere on your network. No SSH. No extra setup.
+ 
+```
+http://your-robot-ip:8099
+        ↓
+┌──────────────────────────────────────┐
+│  ROS2 Info  Dashboard       🟢 Live  │
+│──────────────────────────────────────│
+│  Nodes      12  ●●●●●●●●●●●●        │
+│  Topics     38  publishing           │
+│  Domain ID  42                       │
+│  Distro     Jazzy  ✔                 │
+│  Workspaces 3 sourced  ✔             │
+│  CPU        34°C  42%                │
+│  RAM        6.1 / 16 GB              │
+└──────────────────────────────────────┘
+```
 ## Install (all packages)
 ```bash
 # Create and activate a venv (optional but recommended)
@@ -107,13 +237,19 @@ pip install -e src/ros2_fastfetch
 *(Ensure you have sourced your ROS2 environment first: `source /opt/ros/jazzy/setup.bash`)*
 
 ```bash
-ros2_info --help
+ros2_info 
+ **you will enter a workspace **
+**OR just follow **
 ros2_info
 ros2_info terminal
 ros2_info web
 ```
 
 ## Future updates (coming soon)
-- More themes and layout presets
-- Expanded web dashboard telemetry
-- Additional workspace and build insights
+<div align="center">
+*Created by roboticists, for roboticists* 🤖
+ 
+**[⭐ Star on GitHub](https://github.com/Gaurav-x111/ros2_info)** · **[🐛 Report an issue](https://github.com/Gaurav-x111/ros2_info/issues)** · **[🍴 Fork it](https://github.com/Gaurav-x111/ros2_info/fork)**
+ 
+</div>
+
