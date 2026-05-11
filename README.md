@@ -9,7 +9,7 @@ A fastfetch-style ROS2 workstation lens: **know what, where, and which is workin
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3B82F6?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge)](LICENSE)
 [![colcon](https://img.shields.io/badge/Built%20with-colcon-F97316?style=for-the-badge)](https://colcon.readthedocs.io)
-[![Version](https://img.shields.io/badge/version-v2.3.0-818CF8?style=for-the-badge)](https://github.com/Gaurav-x111/ros2_info/releases)
+[![Version](https://img.shields.io/badge/version-v2.0.0-818CF8?style=for-the-badge)](https://github.com/Gaurav-x111/ros2_info/releases)
 
 *Born from curiosity. Built for roboticists.*
 
