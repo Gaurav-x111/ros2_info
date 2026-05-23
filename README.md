@@ -22,7 +22,7 @@ A fastfetch-style ROS2 workstation lens: **know what, where, and which is workin
 
 **Joke:** If `ros2 node list` is empty, did the robots take a coffee break or did we forget to source again? ☕🤖
 
-## 🆕 What's new in v2.3.0
+## 🆕 What's new in v2.0.0
  
 | Feature | What it does |
 |---|---|
@@ -41,7 +41,9 @@ A fastfetch-style ROS2 workstation lens: **know what, where, and which is workin
  
 ROS2 development isn't just about writing nodes — it's about surviving the environment.
 **ROS2 Info** gives you an instant, accurate snapshot of your entire workspace state the moment you need it.
- 
+
+![WORKSPACE Preview](https://github.com/Gaurav-x111/ros2_info/blob/main/asset/startup.png)
+![ROS2 Info Preview](https://github.com/Gaurav-x111/ros2_info/blob/main/asset/info.png)
 ### 🔍 What gets surfaced — instantly
  
 ```
@@ -130,19 +132,19 @@ ros2_info (**this will appear**)
 ``
 ## Features
 ```
+    ╔═══════════════════════════════════════════════════════════════════════════╗
+    ║                     ROS2 Info — Interactive Terminal v2.0.0               ║
+    ╚═══════════════════════════════════════════════════════════════════════════╝
 
-╔═══════════════════════════════════════════════════════════════════════════╗
-║               ROS2 Info — Interactive Terminal  v2.0.0                    ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-        DISCOVERY
-                info                System and ROS2 fastfetch overview
-                nodes               List active nodes
-                topics              List active topics
-                services            List active services
-                actions             List active actions
-                env                 Show ROS2 env variables
-                node info <name>    Show pub/sub/service info
-                interface show <t>  Show message/srv definition
+       DISCOVERY
+                info                  System and ROS2 fastfetch overview
+                nodes                 List active nodes
+                topics                List active topics
+                services              List active services
+                actions               List active actions
+                env                   Show ROS2 environment variables
+                node info <name>      Show node publishers/subscribers/services
+                interface show <t>    Show message/service/action definition
 
         MONITORING
                 echo <topic> [--once]   Stream topic messages
@@ -214,7 +216,7 @@ http://your-robot-ip:8099
 ┌──────────────────────────────────────┐
 │  ROS2 Info  Dashboard       🟢 Live  │
 │──────────────────────────────────────│
-│  Nodes      12  ●●●●●●●●●●●●        │
+│  Nodes      12  ●●●●●●●●●●●●         │
 │  Topics     38  publishing           │
 │  Domain ID  42                       │
 │  Distro     Jazzy  ✔                 │
