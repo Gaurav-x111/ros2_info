@@ -333,6 +333,21 @@ def get_last_ros2_update(distro: Optional[str]) -> Optional[str]:
     return None
 
 
+def get_rmw_implementation() -> str:
+    """Get the RMW (ROS Middleware) implementation name."""
+    rmw = os.environ.get("RMW_IMPLEMENTATION", "")
+    if rmw:
+        # Strip the common prefix to show a short name
+        return rmw.replace("rmw_", "").replace("_cpp", "").replace("_c", "")
+    # Derive from DDS if available
+    dds = get_dds_implementation()
+    if "Cyclone" in dds:
+        return "cyclonedds"
+    if "Connext" in dds:
+        return "connextdds"
+    return "fastrtps"
+
+
 def collect_all(
     check_live: bool = True,
     check_updates: bool = True,
@@ -347,6 +362,7 @@ def collect_all(
         "distro": distro,
         "distro_info": distro_info,
         "dds": get_dds_implementation(),
+        "rmw": get_rmw_implementation(),
         "domain_id": get_domain_id(),
         "localhost_only": check_localhost_only(),
         "packages": get_ros2_packages(distro),
