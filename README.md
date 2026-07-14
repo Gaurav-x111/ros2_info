@@ -161,9 +161,8 @@ impl Plugin for MyPlugin {
 <summary><strong>Full command reference</strong></summary>
 
 ### TUI keyboard shortcuts
-'''
+
 ![tui_shortcut](asset/tui_shortcut.png)
-'''
 
 d
 ### Mouse interactions
@@ -176,7 +175,9 @@ d
 | Drag | Panel resize edges (sidebar, right panel, terminal top) |
 | Click `+` | New editor tab |
 | Click `✕` | Close editor tab |
-![code_editior](assest/tui_codeeditior.png)
+<div>
+>![code_editior](assest/tui_codeeditior.png)
+</div>
 ### AI commands (in terminal)
 
 | Command | What it does |
@@ -189,8 +190,10 @@ d
 | `ai explain <error>` | Translate compiler output to English |
 | `ai chat <msg>` | Ask a question |
 | `ai web [port]` | Web chat UI (default 8899) |
-![ai_web](assest/aiwebchat.png)
 
+<div>
+>![ai_web](assest/aiwebchat.png)
+</div>
 
 > Mutating actions (`ai fix`, `ai auto`) go through the same Preview → Apply gate as everything else. No silent exceptions.
 
