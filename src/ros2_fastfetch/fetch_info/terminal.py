@@ -33,20 +33,23 @@ def _setup_readline():
 def _save_history():
     try:
         readline.write_history_file(HISTORY_FILE)
-    except Exception:
+    except (OSError, IOError, PermissionError):
         pass
 
 
 # ── Shell Helpers ────────────────────────────────────────────────────────────
 def _run(cmd: list, timeout: int = 10, input_data: str = None) -> tuple[str, str, int]:
-    """Run a command, return (stdout, stderr, returncode)."""
+    """Run a command, return (stdout, stderr, returncode).
+
+    Ponytail: env dict copied to avoid mutation risks.
+    """
     try:
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             timeout=timeout,
-            env={**os.environ},
+            env=dict(os.environ),  # ponytail: copy, not reference
             input=input_data,
         )
         return result.stdout.strip(), result.stderr.strip(), result.returncode
@@ -54,7 +57,9 @@ def _run(cmd: list, timeout: int = 10, input_data: str = None) -> tuple[str, str
         return "", "Command timed out", 1
     except FileNotFoundError:
         return "", f"Command not found: {cmd[0]}", 127
-    except Exception as e:
+    except PermissionError:
+        return "", "Permission denied", 126
+    except OSError as e:
         return "", str(e), 1
 
 
@@ -66,7 +71,7 @@ def _run_streaming(cmd: list, console: Console, theme: dict, timeout: int = 30):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            env={**os.environ},
+            env=dict(os.environ),  # ponytail: copy
         )
         start = time.time()
         console.print(f"  [{theme['dim_style']}]PID {proc.pid} — Ctrl+C to stop[/]\n")
@@ -250,8 +255,12 @@ def cmd_node_info(args: list, console: Console, theme: dict):
         console.print(f"  [{theme['error_style']}]{stderr or 'Node not found'}[/]")
         return
     syntax = Syntax(stdout, "yaml", theme="monokai", background_color="default")
-    console.print(Panel(syntax, title=f"[bold]Node: {args[0]}[/]",
-                        border_style=theme["panel_border"], box=box.ROUNDED))
+    try:
+        console.print(Panel(syntax, title=f"[bold]Node: {args[0]}[/]",
+                            border_style=theme["panel_border"], box=box.ROUNDED))
+    except Exception:
+        console.print(f"  [{theme['key_style']}]Node: {args[0]}[/]")
+        console.print(stdout)
 
 
 def cmd_service_call(args: list, console: Console, theme: dict):
@@ -319,8 +328,12 @@ def cmd_bag(args: list, console: Console, theme: dict):
             console.print(f"  [{theme['error_style']}]{stderr}[/]")
         else:
             syntax = Syntax(stdout, "yaml", theme="monokai", background_color="default")
-            console.print(Panel(syntax, title="[bold]Bag Info[/]",
-                                border_style=theme["panel_border"], box=box.ROUNDED))
+            try:
+                console.print(Panel(syntax, title="[bold]Bag Info[/]",
+                                    border_style=theme["panel_border"], box=box.ROUNDED))
+            except Exception:
+                console.print(f"  [{theme['key_style']}]Bag Info[/]")
+                console.print(stdout)
     else:
         console.print(f"  [{theme['error_style']}]Unknown bag subcommand. Use: record | play | info[/]")
 
@@ -367,6 +380,159 @@ def cmd_shell(args: list, console: Console, theme: dict):
         console.print(f"  [{theme['error_style']}]Usage: shell <command> [args...][/]")
         return
     _run_streaming(args, console, theme, timeout=30)
+
+
+def cmd_doctor(console: Console, theme: dict, fix: bool = False):
+    from fetch_info.collector.diagnostics import run_diagnostics
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich.text import Text
+
+    with console.status("[cyan]Running diagnostics...", spinner="dots2"):
+        result = run_diagnostics()
+    checks = result["checks"]
+    summary = result["summary"]
+
+    CHECK_ICONS = {"pass": "✅", "warn": "⚠️ ", "fail": "❌", "info": "ℹ️ "}
+
+    console.print(f"\n  [bold {theme['logo_color1']}]ROS2 DOCTOR[/]  [{theme['dim_style']}]Health Check Report[/]\n")
+    for check in checks:
+        icon = CHECK_ICONS.get(check["status"], "?")
+        label = f"  {icon}  {check['name']:<35}"
+        detail = check['detail'][:60]
+        pstyle = theme["ok_style"] if check["status"] == "pass" else theme["warn_style"] if check["status"] == "warn" else theme["error_style"] if check["status"] == "fail" else theme["dim_style"]
+        console.print(f"{label} [{pstyle}]{detail}[/]")
+        if fix and check.get("fix") and check["status"] in ("warn", "fail"):
+            console.print(f"  {'':>40}[{theme['highlight']}]→ Fix: {check['fix']}[/]")
+
+    summary_table = Table(border_style=theme["panel_border"], box=None)
+    summary_table.add_column("Result", style=theme["key_style"])
+    summary_table.add_column("Count", style=theme["value_style"])
+    summary_table.add_row("Health Score", f"{summary['score']}%")
+    summary_table.add_row("✅ Passed", str(summary["passed"]))
+    summary_table.add_row("⚠️  Warnings", str(summary["warnings"]))
+    summary_table.add_row("❌ Failed", str(summary["failed"]))
+    console.print()
+    try:
+        console.print(Panel(summary_table, title="[bold]Summary[/]", border_style=theme["panel_border"]))
+    except Exception:
+        console.print(f"  [{theme['key_style']}]Summary: Score={summary['score']}%, Passed={summary['passed']}, Warnings={summary['warnings']}, Failed={summary['failed']}[/]")
+
+
+def cmd_diagnose(console: Console, theme: dict):
+    from fetch_info.collector.diagnostics import run_diagnostics
+    from rich.panel import Panel
+    from rich.text import Text
+    from rich import box
+
+    with console.status("[cyan]Analyzing ROS2 environment...", spinner="dots"):
+        result = run_diagnostics()
+    checks = result["checks"]
+    summary = result["summary"]
+
+    console.print(f"\n  [bold {theme['logo_color1']}]ROS2 DIAGNOSE[/]  [{theme['dim_style']}]Found {summary['failed']} issues[/]\n")
+    CHECK_ICONS = {"pass": "✅", "warn": "⚠️ ", "fail": "❌", "info": "ℹ️ "}
+
+    for check in checks:
+        if check["status"] in ("pass", "info"):
+            continue
+        icon = CHECK_ICONS.get(check["status"], "?")
+        label = f"  {icon}  {check['name']}"
+        pstyle = theme["error_style"] if check["status"] == "fail" else theme["warn_style"]
+        content = Text()
+        content.append(f"Issue: {check['detail']}\n", style=pstyle)
+        if check.get("fix"):
+            content.append(f"Fix: {check['fix']}", style=theme["highlight"])
+        console.print(Panel(content, title=label, border_style=pstyle, box=box.ROUNDED))
+
+    console.print(f"\n  [{theme['dim_style']}]Run: doctor --fix to auto-apply safe fixes[/]")
+
+
+def cmd_matrix(console: Console, theme: dict, timeout: int = 5):
+    from rich.table import Table
+    from rich import box
+
+    with console.status("[cyan]Building communication matrix...", spinner="dots"):
+        graph = build_topic_graph(timeout=timeout)
+
+    console.print(f"\n  [bold {theme['logo_color1']}]Communication Matrix[/]\n")
+    if not graph["nodes"]:
+        console.print(f"  [{theme['warn_style']}]No nodes found. Is ROS2 running?[/]")
+        return
+
+    nodes = list(graph["nodes"].keys())
+    topics = graph["topics"]
+
+    tbl = Table(border_style=theme["panel_border"], box=box.MINIMAL_HEAVY_HEAD)
+    tbl.add_column("Node", style=f"bold {theme['key_style']}", no_wrap=True)
+    tbl.add_column("Publishes →", style=theme["ok_style"])
+    tbl.add_column("→ Subscribes", style=theme["logo_color2"])
+
+    for node in nodes:
+        pubs = graph["nodes"][node].get("pubs", [])
+        subs = graph["nodes"][node].get("subs", [])
+        pub_names = "\n".join(p.split("/")[-1] for p in pubs[:5]) if pubs else "—"
+        sub_names = "\n".join(s.split("/")[-1] for s in subs[:5]) if subs else "—"
+        tbl.add_row(node.split("/")[-1] or node, pub_names, sub_names)
+    console.print(tbl)
+
+    if topics:
+        console.print(f"\n  [{theme['section_title']}]Topic Details:[/]\n")
+        for topic, conns in list(topics.items())[:15]:
+            pubs = conns.get("publishers", [])
+            subs = conns.get("subscribers", [])
+            icon = "✓" if pubs and subs else "⚠"
+            console.print(f"  {icon}  [{theme['highlight']}]{topic}[/]")
+            console.print(f"       Pub: [{theme['ok_style']}]{', '.join(p.split('/')[-1] for p in pubs[:3]) or '?'}[/]")
+            console.print(f"       Sub: [{theme['logo_color2']}]{', '.join(s.split('/')[-1] for s in subs[:3]) or '?'}[/]")
+
+
+def cmd_benchmark(console: Console, theme: dict, duration: int = 10):
+    from fetch_info.collector import ros2, system
+    from rich.table import Table
+    import time as time_module
+    import subprocess
+    import os
+
+    console.print(f"\n  [bold {theme['logo_color1']}]Performance Benchmark[/]")
+    console.print(f"  [{theme['dim_style']}]Measuring for {duration}s...[/]\n")
+
+    sys_info = system.collect_all()
+    topics = ros2.get_active_topics(timeout=3)
+    nodes = ros2.get_active_nodes(timeout=3)
+
+    topic_rates = {}
+    with console.status("[cyan]Measuring topic rates...", spinner="dots"):
+        for tp in topics[:10]:
+            name = tp["name"]
+            try:
+                out = subprocess.run(
+                    ["ros2", "topic", "hz", name, "--window", "10"],
+                    capture_output=True, text=True,
+                    timeout=duration + 2,
+                    env={**os.environ}
+                ).stdout.strip()
+                topic_rates[name] = out.split("\n")[-1] if out else "N/A"
+            except Exception:
+                topic_rates[name] = "N/A"
+
+    if topic_rates:
+        tbl = Table(title="Topic Rates", border_style=theme["panel_border"])
+        tbl.add_column("Topic", style=f"bold {theme['key_style']}")
+        tbl.add_column("Rate", style=theme["value_style"])
+        for name, rate in topic_rates.items():
+            tbl.add_row(name, rate)
+        console.print(tbl)
+
+    mem = sys_info.get("memory", {})
+    summary = Table(border_style=theme["panel_border"], box=None)
+    summary.add_column("Metric", style=theme["key_style"])
+    summary.add_column("Value", style=theme["value_style"])
+    summary.add_row("Nodes", str(len(nodes)))
+    summary.add_row("Topics", str(len(topics)))
+    summary.add_row("Memory", f"{mem.get('used_gb', '?')}/{mem.get('total_gb', '?')} GB")
+    summary.add_row("Duration", f"{duration}s")
+    console.print(summary)
 
 
 def cmd_rqt_graph(console: Console, theme: dict):
@@ -424,7 +590,7 @@ def cmd_tmux(args: list, console: Console, theme: dict):
         name = args[1] if len(args) > 1 else ""
         cmd_args = f"tmux attach-session" + (f" -t {name}" if name else "")
         console.print(f"  [{theme['dim_style']}]Attaching... (Ctrl+B D to detach)[/]")
-        os.system(cmd_args)
+        subprocess.run(cmd_args.split(), timeout=10)
     elif subcmd == "kill":
         name = args[1] if len(args) > 1 else ""
         if not name:
@@ -465,8 +631,8 @@ def cmd_source(args: list, console: Console, theme: dict):
         return
     try:
         result = subprocess.run(
-            f"bash -c 'source {path} && env'",
-            shell=True, capture_output=True, text=True, timeout=10
+            ["bash", "-c", f"source {path} && env"],
+            capture_output=True, text=True, timeout=10
         )
         count = 0
         for line in result.stdout.split("\n"):
@@ -636,6 +802,14 @@ HELP_TEXT = """
     ping <node>             Liveness check
     graph [timeout]         ASCII pub→sub graph
     rqt                     Launch rqt_graph GUI (bg)
+    matrix                  Topic communication matrix
+    doctor [-f]             Full diagnostic health check
+    diagnose                Deep-dive issue finder
+    benchmark [-d N]        Performance benchmarking (default 10s)
+    trend [--record]        Show/record historical system trends
+    launch-verify / lv      Verify launch files for issues
+    bag-analyze / ba        Analyze bag file health & timeline
+    fleet <h1> [h2...]      Multi-robot fleet status
 
   ACTIONS
     pub <topic> <type> <yaml> [--once]
@@ -667,6 +841,8 @@ HELP_TEXT = """
     shell <cmd>         Run any shell command
     source <file>       Source bash file → env
     history             Show command history
+    sandbox run/launch/export/status
+                        Isolated ROS2 execution (namespace /sandbox)
     help                Show this help
     clear               Clear screen
     quit / exit / q     Exit terminal
@@ -678,8 +854,10 @@ COMMANDS = [
     "info", "nodes", "topics", "services", "actions", "env", "node", "interface",
     "echo", "hz", "bw", "watch", "ping", "graph", "rqt",
     "pub", "service", "param", "bag", "launch", "run",
-    "tmux", "colcon", "cd", "ls", "pwd", "source", "web",
+    "tmux", "colcon", "cd", "ls", "pwd", "source", "web", "sandbox",
     "shell", "clear", "history", "help", "quit", "exit", "q",
+    "doctor", "diagnose", "matrix", "benchmark",
+    "trend", "launch-verify", "lv", "bag-analyze", "ba", "fleet",
 ]
 
 class ROS2Completer:
@@ -721,32 +899,67 @@ def run_interactive_terminal(theme_name: str = "default"):
     from fetch_info.display.logo import get_main_banner
 
     theme = get_theme(theme_name)
-    console = Console(width=shutil.get_terminal_size((120, 40)).columns)
+    # Get dynamic terminal size - no fixed width
+    console = Console()
 
     _setup_readline()
     completer = ROS2Completer()
     readline.set_completer(completer.complete)
     readline.parse_and_bind("tab: complete")
 
-    # Splash
+    # Splash - clear and show banner
     console.clear()
     console.print()
-    console.print(get_main_banner(theme))
+
+    # Get current terminal size for responsive layout
+    term_size = shutil.get_terminal_size((80, 24))
+    width = term_size.columns
+    narrow = width < 50
+
+    try:
+        console.print(get_main_banner(theme, width=width))
+    except Exception:
+        console.print(Text("  ROS2 Info Interactive Terminal",
+                           style=f"bold {theme['logo_color1']}"))
+
     console.print()
+
+    # Build panel text - wrap on narrow terminals
     panel_text = Text()
     panel_text.append("  ROS2 Interactive Terminal\n", style=f"bold {theme['logo_color1']}")
-    panel_text.append("  Type ", style=theme['dim_style'])
-    panel_text.append(" help", style=f"bold {theme['highlight']}")
-    panel_text.append(" for commands, ", style=theme['dim_style'])
-    panel_text.append("web", style=f"bold {theme['highlight']}")
-    panel_text.append(" for dashboard. ", style=theme['dim_style'])
-    panel_text.append("Tab", style=f"bold {theme['highlight']}")
-    panel_text.append(" to autocomplete. ", style=theme['dim_style'])
-    panel_text.append("Ctrl+C", style=f"bold {theme['highlight']}")
-    panel_text.append(" to interrupt.\n", style=theme['dim_style'])
-    panel_text.append("  History saved to: ", style=theme['dim_style'])
+    if width < 60:
+        panel_text.append("  Type ", style=theme['dim_style'])
+        panel_text.append("help", style=f"bold {theme['highlight']}")
+        panel_text.append(" for cmds. ", style=theme['dim_style'])
+        panel_text.append("Tab", style=f"bold {theme['highlight']}")
+        panel_text.append(" completes.\n", style=theme['dim_style'])
+    else:
+        panel_text.append("  Type ", style=theme['dim_style'])
+        panel_text.append("help", style=f"bold {theme['highlight']}")
+        panel_text.append(" for commands, ", style=theme['dim_style'])
+        panel_text.append("web", style=f"bold {theme['highlight']}")
+        panel_text.append(" for dashboard. ", style=theme['dim_style'])
+        panel_text.append("Tab", style=f"bold {theme['highlight']}")
+        panel_text.append(" to autocomplete. ", style=theme['dim_style'])
+        panel_text.append("Ctrl+C", style=f"bold {theme['highlight']}")
+        panel_text.append(" to interrupt.\n", style=theme['dim_style'])
+    panel_text.append("  History: ", style=theme['dim_style'])
     panel_text.append(HISTORY_FILE, style=theme['value_style'])
-    console.print(Panel(panel_text, border_style=theme["panel_border"], box=box.ROUNDED))
+
+    try:
+        # Use a lighter box on narrow terminals so it fits cleanly
+        chosen_box = box.SIMPLE if narrow else box.ROUNDED
+        panel = Panel(panel_text, border_style=theme["panel_border"], box=chosen_box,
+                      width=min(width, 86))
+        if width > 100:
+            from rich.align import Align
+            panel = Align.center(panel)
+        console.print(panel)
+    except Exception:
+        # Fallback if Panel rendering fails (terminal too small)
+        console.print(f"  [{theme['highlight']}]ROS2 Interactive Terminal[/]")
+        console.print(f"  [{theme['dim_style']}]Type 'help' for commands. History: {HISTORY_FILE}[/]")
+
     console.print()
 
     prompt = f"\x1b[1;36mros2 ›\x1b[0m "
@@ -777,7 +990,7 @@ def run_interactive_terminal(theme_name: str = "default"):
                 console.print(Text(HELP_TEXT, style=theme["value_style"]))
 
             elif cmd == "clear":
-                os.system("clear")
+                subprocess.run(["clear"], timeout=5)
 
             elif cmd == "history":
                 count = readline.get_current_history_length()
@@ -858,15 +1071,153 @@ def run_interactive_terminal(theme_name: str = "default"):
             elif cmd == "rqt":
                 cmd_rqt_graph(console, theme)
 
+            elif cmd == "doctor":
+                cmd_doctor(console, theme, fix="--fix" in args)
+
+            elif cmd == "diagnose":
+                cmd_diagnose(console, theme)
+
+            elif cmd == "matrix":
+                timeout = int(args[0]) if args and args[0].isdigit() else 5
+                cmd_matrix(console, theme, timeout=timeout)
+
+            elif cmd == "trend":
+                from fetch_info.collector.trends import record_snapshot, get_trend, get_summary
+                from fetch_info.collector import system, ros2 as ros2_col
+                record_flag = "--record" in args or "-r" in args
+                if record_flag:
+                    with console.status("[cyan]Recording snapshot...", spinner="dots"):
+                        sys_d = system.collect_all()
+                        ros2_d = ros2_col.collect_all(check_live=True, live_timeout=3, check_updates=False)
+                        mem = sys_d.get("memory", {})
+                        bat = sys_d.get("battery", {})
+                        record_snapshot(
+                            cpu_percent=sys_d.get("cpu", {}).get("freq_mhz", 0) or 0,
+                            memory_percent=mem.get("percent", 0),
+                            disk_percent=sys_d.get("disk", {}).get("percent", 0),
+                            battery_percent=bat.get("percent") if bat.get("percent") is not None else None,
+                            node_count=len(ros2_d.get("nodes", [])),
+                            topic_count=len(ros2_d.get("topics", [])),
+                            service_count=len(ros2_d.get("services", [])),
+                        )
+                    console.print(f"  [{theme['ok_style']}]✓ Snapshot recorded[/]")
+                else:
+                    summary = get_summary()
+                    if summary["total_snapshots"] == 0:
+                        console.print(f"  [{theme['warn_style']}]No data yet. Use: trend --record[/]")
+                    else:
+                        tbl = Table(border_style=theme["panel_border"], box=box.MINIMAL_HEAVY_HEAD)
+                        tbl.add_column("Metric", style=f"bold {theme['key_style']}")
+                        tbl.add_column("Min", style=theme["value_style"])
+                        tbl.add_column("Max", style=theme["value_style"])
+                        tbl.add_column("Avg", style=theme["value_style"])
+                        for label, key in [("CPU %", "cpu"), ("Memory %", "memory"), ("Disk %", "disk"),
+                                            ("Battery %", "battery"), ("Nodes", "nodes"), ("Topics", "topics")]:
+                            info = summary.get(key, {})
+                            tbl.add_row(label, str(info.get("min", "—")), str(info.get("max", "—")), str(info.get("avg", "—")))
+                        console.print(tbl)
+                        console.print(f"\n  [{theme['dim_style']}]Based on {summary['total_snapshots']} snapshots[/]")
+
+            elif cmd == "launch-verify" or cmd == "lv":
+                from fetch_info.collector.launch_verify import verify_launch_file, find_missing_dependencies
+                target = args[0] if args else os.getcwd()
+                with console.status(f"[cyan]Verifying {target}...", spinner="dots"):
+                    if os.path.isdir(target):
+                        from fetch_info.collector.launch_verify import verify_workspace_launch_files
+                        result = verify_workspace_launch_files(target)
+                    else:
+                        result = verify_launch_file(target)
+                console.print(f"\n  [bold {theme['logo_color1']}]Launch Verify[/]")
+                for c in result.get("checks", []):
+                    icon = "❌" if c["severity"] == "error" else "⚠" if c["severity"] == "warning" else "ℹ"
+                    style = theme["error_style"] if c["severity"] == "error" else theme["warn_style"] if c["severity"] == "warning" else theme["dim_style"]
+                    console.print(f"  {icon} [{style}]{c['message']}[/]")
+                    if c.get("fix"):
+                        console.print(f"     [{theme['highlight']}]→ {c['fix']}[/]")
+
+            elif cmd == "bag-analyze" or cmd == "ba":
+                from fetch_info.collector.bag_forensics import analyze_bag, check_bag_health, get_topic_timeline
+                target = args[0] if args else console.input(f"  [{theme['value_style']}]Bag path: [/]").strip()
+                with console.status(f"[cyan]Analyzing {target}...", spinner="dots"):
+                    info = analyze_bag(target)
+                    health = check_bag_health(target)
+                    timeline = get_topic_timeline(target)
+                if "error" in info:
+                    console.print(f"  [{theme['error_style']}]Error: {info['error']}[/]")
+                else:
+                    tbl = Table(border_style=theme["panel_border"], box=box.MINIMAL_HEAVY_HEAD)
+                    tbl.add_column("Property", style=f"bold {theme['key_style']}")
+                    tbl.add_column("Value", style=theme["value_style"])
+                    tbl.add_row("Duration", f"{info.get('duration', '?'):.1f}s" if info.get('duration') else "?")
+                    tbl.add_row("Size", info.get("size", "?"))
+                    tbl.add_row("Messages", str(info.get("messages", "?")))
+                    tbl.add_row("Compression", info.get("compression", "none"))
+                    console.print(tbl)
+                    if isinstance(timeline, dict) and "error" not in timeline:
+                        t2 = Table(border_style=theme["panel_border"])
+                        t2.add_column("Topic", style=f"bold {theme['key_style']}")
+                        t2.add_column("Count", style=theme["value_style"])
+                        t2.add_column("Hz", style=theme["value_style"])
+                        for n, d in list(timeline.items())[:15]:
+                            t2.add_row(n, str(d.get("message_count", 0)), str(d.get("rate_hz", 0)))
+                        console.print(t2)
+
+            elif cmd == "fleet":
+                from fetch_info.collector.fleet import FleetHost, collect_fleet
+                hosts_input = args if args else []
+                if not hosts_input:
+                    console.print(f"  [{theme['error_style']}]Usage: fleet <host1> [host2...][/]")
+                else:
+                    fhosts = [FleetHost(hostname=h, ip=h) for h in hosts_input]
+                    with console.status(f"[cyan]Checking {len(fhosts)} hosts...", spinner="dots"):
+                        results = collect_fleet(fhosts)
+                    tbl = Table(border_style=theme["panel_border"], box=box.MINIMAL_HEAVY_HEAD)
+                    tbl.add_column("Host", style=f"bold {theme['key_style']}")
+                    tbl.add_column("Status", style=theme["value_style"])
+                    tbl.add_column("ROS2", style=theme["value_style"])
+                    tbl.add_column("Memory", style=theme["value_style"])
+                    for r in results:
+                        st = f"[{theme['ok_style']}]🟢 Online[/]" if r.get("reachable") else f"[{theme['error_style']}]🔴[/]"
+                        tbl.add_row(r.get("hostname", "?"), st, r.get("ros_distro", "—") or "—", r.get("memory", "—") or "—")
+                    console.print(tbl)
+
+            elif cmd == "benchmark":
+                duration = 10
+                for i, a in enumerate(args):
+                    if a == "-d" and i + 1 < len(args):
+                        try: duration = int(args[i + 1])
+                        except (ValueError, IndexError): pass
+                cmd_benchmark(console, theme, duration=duration)
+
             elif cmd == "web":
                 port = int(args[0]) if args else 8099
-                console.print(f"  [bold cyan]🌐 Starting Web UI on http://localhost:{port}[/]")
-                console.print(f"  [{theme['dim_style']}]Press Ctrl+C in this terminal to stop the server when done.[/]")
-                from fetch_info.web import run_web
-                try:
-                    run_web(port=port)
-                except Exception as e:
-                    console.print(f"  [{theme['error_style']}]Web UI Error: {e}[/]")
+                use_rt = "--rt" in args or "-rt" in args
+                if use_rt:
+                    rust_bin = os.path.join(os.path.dirname(__file__), "..", "..", "backend", "target", "release", "ros2-info-rt")
+                    if not os.path.exists(rust_bin):
+                        rust_bin = os.path.join(os.path.dirname(__file__), "..", "..", "backend", "target", "debug", "ros2-info-rt")
+                    if os.path.exists(rust_bin):
+                        console.print(f"  [bold green]🚀 Starting Rust backend on http://localhost:{port}[/]")
+                        console.print(f"  [{theme['dim_style']}]Press Ctrl+C to stop[/]")
+                        subprocess.run([rust_bin, "--port", str(port)])
+                    else:
+                        console.print(f"  [{theme['warn_style']}]Rust backend not found. Building...[/]")
+                        build_dir = os.path.join(os.path.dirname(__file__), "..", "..", "backend")
+                        subprocess.run(["cargo", "build", "--release"], cwd=build_dir)
+                        if os.path.exists(rust_bin):
+                            subprocess.run([rust_bin, "--port", str(port)])
+                        else:
+                            console.print(f"  [{theme['error_style']}]Build failed. Falling back to Flask.[/]")
+                            from fetch_info.web import run_web
+                            run_web(port=port)
+                else:
+                    console.print(f"  [bold cyan]🌐 Starting Web UI on http://localhost:{port}[/]")
+                    console.print(f"  [{theme['dim_style']}]Press Ctrl+C in this terminal to stop the server when done.[/]")
+                    from fetch_info.web import run_web
+                    try:
+                        run_web(port=port)
+                    except Exception as e:
+                        console.print(f"  [{theme['error_style']}]Web UI Error: {e}[/]")
 
             elif cmd == "tmux":
                 cmd_tmux(args, console, theme)
@@ -894,6 +1245,50 @@ def run_interactive_terminal(theme_name: str = "default"):
 
             elif cmd == "shell":
                 cmd_shell(args, console, theme)
+
+            elif cmd == "sandbox":
+                from fetch_info.sandbox import create_sandbox, export_to_global, SandboxConfig
+                import json as _json
+                sub = args[0].lower() if args else "status"
+                if sub == "run" and len(args) >= 3:
+                    sx = create_sandbox()
+                    proc = sx.run_node(args[1], args[2], args[3:])
+                    console.print(f"  [{theme['ok_style']}]Running {args[1]}/{args[2]} in /sandbox namespace[/]")
+                    console.print(f"  [{theme['dim_style']}]PID {proc.pid} — Ctrl+C to stop[/]")
+                    try:
+                        for line in proc.stdout:
+                            console.print(f"  [{theme['value_style']}]{line.rstrip()}[/]")
+                    except KeyboardInterrupt:
+                        sx.stop_all()
+                        console.print(f"\n  [{theme['warn_style']}]Sandbox stopped.[/]")
+                elif sub == "launch" and len(args) >= 3:
+                    sx = create_sandbox()
+                    proc = sx.run_launch(args[1], args[2])
+                    console.print(f"  [{theme['ok_style']}]Launch {args[1]}/{args[2]} in /sandbox[/]")
+                    try:
+                        for line in proc.stdout:
+                            console.print(f"  [{theme['value_style']}]{line.rstrip()}[/]")
+                    except KeyboardInterrupt:
+                        sx.stop_all()
+                elif sub == "export":
+                    target = os.path.expanduser(args[1] if len(args) > 1 else "~/.ros2_info/global_config.json")
+                    cfg = SandboxConfig(namespace="/sandbox", domain_id="42")
+                    if export_to_global(cfg, target):
+                        console.print(f"  [{theme['ok_style']}]Exported sandbox config → {target}[/]")
+                    else:
+                        console.print(f"  [{theme['error_style']}]Export failed.[/]")
+                elif sub == "status":
+                    in_sb = os.environ.get("ROS_NAMESPACE", "")
+                    if in_sb:
+                        console.print(f"  [{theme['warn_style']}]Sandbox active: {in_sb}[/]")
+                    else:
+                        console.print(f"  [{theme['dim_style']}]Not in sandbox mode (global namespace)[/]")
+                else:
+                    console.print(f"  [{theme['error_style']}]Usage: sandbox run|launch|export|status [...] [/]")
+                    console.print(f"  [{theme['dim_style']}]  sandbox run <pkg> <exe> [args...][/]")
+                    console.print(f"  [{theme['dim_style']}]  sandbox launch <pkg> <file>[/]")
+                    console.print(f"  [{theme['dim_style']}]  sandbox export [path][/]")
+                    console.print(f"  [{theme['dim_style']}]  sandbox status[/]")
 
             else:
                 console.print(
