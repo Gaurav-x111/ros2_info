@@ -1,0 +1,64 @@
+# ROS2 Info — Default Configuration
+# Centralized settings for the ROS2 Info tool
+
+# General settings
+general:
+  # Default ROS 2 distro preference order (first found wins)
+  distro_preference:
+    - jazzy
+    - humble
+    - kilted
+    - iron
+    - rolling
+
+  # Auto-source ROS 2 on startup
+  auto_source: true
+
+  # Auto-install missing Python packages
+  auto_install: true
+
+  # Default theme for terminal output
+  default_theme: "default"
+
+# Cache settings
+cache:
+  # ROS 2 data cache TTL in seconds
+  ros2_ttl: 5
+
+  # System data cache TTL in seconds
+  system_ttl: 2
+
+# Collection settings
+collection:
+  # Live ROS 2 query timeout (seconds)
+  live_timeout: 3
+
+  # Refresh interval for TUI (seconds)
+  tui_refresh: 2
+
+  # Background collection intervals (seconds)
+  intervals:
+    system: 2
+    ros2: 5
+    workspace: 10
+    diagnostics: 15
+    trends: 10
+
+# Web dashboard
+web:
+  default_port: 8099
+  default_host: "0.0.0.0"
+
+# TUI settings
+tui:
+  # Sidebar width in columns
+  sidebar_width: 30
+
+  # Default view mode: dashboard | file_explorer
+  default_view: "dashboard"
+
+  # Sandbox mode on startup: global | sandbox
+  sandbox_mode: "global"
+
+  # Telemetry log buffer size
+  telemetry_buffer: 500
