@@ -175,9 +175,9 @@ d
 | Drag | Panel resize edges (sidebar, right panel, terminal top) |
 | Click `+` | New editor tab |
 | Click `✕` | Close editor tab |
-<div>
+
 >![code_editior](assest/tui_codeeditior.png)
-</div>
+
 ### AI commands (in terminal)
 
 | Command | What it does |
@@ -191,9 +191,8 @@ d
 | `ai chat <msg>` | Ask a question |
 | `ai web [port]` | Web chat UI (default 8899) |
 
-<div>
+
 >![ai_web](assest/aiwebchat.png)
-</div>
 
 > Mutating actions (`ai fix`, `ai auto`) go through the same Preview → Apply gate as everything else. No silent exceptions.
 
