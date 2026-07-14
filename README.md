@@ -1,5 +1,5 @@
-
 <div align="center">
+
 # ROS2 Info ⊙
 A fastfetch-style ROS2 workstation lens: **know what, where, and which is working**.
 
@@ -19,13 +19,11 @@ A Rust terminal IDE for ROS 2 developers — VS Code energy, zero Electron weigh
 
 </div>
 
-
 ---
 
 ## See it move
 
 > A real TUI, not a static screenshot. Produced with the tool's own session recorder — the tool demos itself.
-
 
 ![tui_ui](asset/tui_ui.png)
 <table>
@@ -164,7 +162,6 @@ impl Plugin for MyPlugin {
 
 ![tui_shortcut](asset/tui_shortcut.png)
 
-d
 ### Mouse interactions
 
 | Action | Target |
@@ -175,8 +172,6 @@ d
 | Drag | Panel resize edges (sidebar, right panel, terminal top) |
 | Click `+` | New editor tab |
 | Click `✕` | Close editor tab |
-
->![code_editior](assest/tui_codeeditior.png)
 
 ### AI commands (in terminal)
 
@@ -190,9 +185,6 @@ d
 | `ai explain <error>` | Translate compiler output to English |
 | `ai chat <msg>` | Ask a question |
 | `ai web [port]` | Web chat UI (default 8899) |
-
-
->![ai_web](assest/aiwebchat.png)
 
 > Mutating actions (`ai fix`, `ai auto`) go through the same Preview → Apply gate as everything else. No silent exceptions.
 
@@ -281,9 +273,9 @@ Started from a Python fastfetch-style tool with 39 stars before this Rust rewrit
 
 ## Future updates (coming soon)
 <div align="center">
-*Created by roboticists, for roboticists* 🤖
- 
-**[⭐ Star on GitHub](https://github.com/Gaurav-x111/ros2_info)** · **[🐛 Report an issue](https://github.com/Gaurav-x111/ros2_info/issues)** · **[🍴 Fork it](https://github.com/Gaurav-x111/ros2_info/fork)**
- 
-</div>
 
+*Created by roboticists, for roboticists* 🤖
+
+**[⭐ Star on GitHub](https://github.com/Gaurav-x111/ros2_info)** · **[🐛 Report an issue](https://github.com/Gaurav-x111/ros2_info/issues)** · **[🍴 Fork it](https://github.com/Gaurav-x111/ros2_info/fork)**
+
+</div>
