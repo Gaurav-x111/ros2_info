@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>ros2_info</name>
-  <version>1.0.0</version>
+  <version>3.1.0</version>
   <description>Fastfetch-like system info tool for ROS2 with Web UI</description>
-  <maintainer email="080bei018@ioepc.edu.np.com">Your Name</maintainer>
+  <maintainer email="080bei018@ioepc.edu.np.com">Zang</maintainer>
   <license>MIT</license>
 
   <exec_depend>python3-click</exec_depend>
@@ -12,6 +12,7 @@
   <exec_depend>python3-flask</exec_depend>
   <exec_depend>python3-climage</exec_depend>
   <exec_depend>python3-pillow</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>
