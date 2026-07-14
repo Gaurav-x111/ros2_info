@@ -1,0 +1,22 @@
+name: Feature request
+
+about: Suggest an idea or a new plugin
+title: "[FEAT] "
+labels: enhancement
+assignees: ''
+
+---
+
+**Is your feature request related to a problem?**
+A clear and concise description of what the problem is.
+
+**Describe the solution you'd like**
+What you want to happen.
+
+**Plugin? (Rust TUI)**
+If this is a plugin idea, describe:
+- The dashboard tab / terminal command / lifecycle event it needs
+- The `AppEvent` / `PluginAction` it would use (see `docs/plugins.md`)
+
+**Additional context**
+Add any other context or screenshots about the feature request here.
