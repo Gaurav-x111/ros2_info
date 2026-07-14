@@ -1,0 +1,33 @@
+name: Bug report
+
+about: Report a problem with ros2_info
+title: "[BUG] "
+labels: bug
+assignees: ''
+
+---
+
+**Describe the bug**
+A clear and concise description of what the bug is.
+
+**Component**
+- [ ] Rust TUI (`src/tui`)
+- [ ] Python package (`src/ros2_fastfetch`)
+- [ ] Docs / plugin API
+
+**To reproduce**
+Steps to reproduce the behavior:
+1. Run '...'
+2. See error '...'
+
+**Expected behavior**
+What you expected to happen.
+
+**Environment**
+- OS / arch: [e.g. Ubuntu 22.04 x86_64, Pi 5 aarch64]
+- ROS 2 distro: [e.g. Jazzy]
+- `ros2_info` version / commit:
+
+**Additional context**
+- For TUI bugs: attach `/tmp/tui_panic.log` if present.
+- For plugin issues: which plugin, and how it was registered (`docs/plugins.md`).
