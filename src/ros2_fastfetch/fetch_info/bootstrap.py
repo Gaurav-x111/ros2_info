@@ -39,9 +39,9 @@ def source_ros2(setup_bash: str) -> bool:
     Returns True if successful.
     """
     try:
-        cmd = f"bash -c 'source {setup_bash} && env'"
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, timeout=15
+            ["bash", "-c", f"source {setup_bash} && env"],
+            capture_output=True, text=True, timeout=15
         )
         if result.returncode != 0:
             return False
