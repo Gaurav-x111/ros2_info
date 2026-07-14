@@ -21,8 +21,20 @@ def find_workspaces(max_depth: int = 4) -> List[str]:
     def is_workspace(path: Path) -> bool:
         try:
             children = {p.name for p in path.iterdir() if p.is_dir()}
-            # At least 2 of the indicators should be present
-            return len(children & workspace_indicators) >= 2
+            # Require at least 2 colcon indicators AND a package.xml in src/
+            has_indicators = len(children & workspace_indicators) >= 2
+            if not has_indicators:
+                return False
+            # Must have at least one package.xml under src/ to be a real ROS2 workspace
+            src = path / "src"
+            if src.exists():
+                try:
+                    next(src.rglob("package.xml"))
+                    return True
+                except StopIteration:
+                    return False
+            # If no src/, fall back to just indicators (for install-only workspaces)
+            return True
         except PermissionError:
             return False
 
