@@ -87,6 +87,14 @@ Thumbs.db
 *.backup
 *~
 
+# Rust
+src/backend/target/
+src/tui/target/
+
+# AI tools
+.claude/
+.opencode/
+
 # Git
 .git/
 .gitmodules
