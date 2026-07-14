@@ -1,0 +1,37 @@
+# ROS2 Info — Sandbox Configuration
+# Settings for isolated ROS 2 node execution
+
+sandbox:
+  # Namespace prefix for all sandboxed nodes
+  namespace: "/sandbox"
+
+  # Isolate /tmp directory for sandboxed processes
+  isolated_tmp: true
+
+  # Custom ROS_DOMAIN_ID to separate from production
+  # Default: 42 (commonly used for testing)
+  domain_id: "42"
+
+  # Environment variable overrides for sandboxed nodes
+  env_overrides:
+    ROS_LOCALHOST_ONLY: "0"
+    RCUTILS_LOGGING_USE_STDOUT: "1"
+    RCUTILS_LOGGING_BUFFER_SIZE: "1024"
+
+  # Optional: containerized isolation settings
+  container:
+    enabled: false
+    runtime: "podman"  # or "docker"
+    image: "ros:jazzy"
+
+# Export pipeline settings
+export:
+  # When promoting sandbox config to global, save here
+  global_config_path: "~/.ros2_info/global_config.json"
+
+  # Confirm before export (safety)
+  confirm: true
+
+  # Backup current config before export
+  backup: true
+  backup_path: "~/.ros2_info/backups"
