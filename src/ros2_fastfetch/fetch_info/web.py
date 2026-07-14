@@ -8,7 +8,8 @@ import subprocess
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
-from flask import Flask, abort, jsonify, render_template, request, send_file
+from functools import wraps
+from flask import Flask, Response, Response, abort, jsonify, render_template, request, send_file
 
 
 def create_app():
@@ -16,6 +17,82 @@ def create_app():
     app = Flask(__name__, template_folder=template_dir)
 
     from fetch_info.collector import system, ros2, workspace
+
+    _auth_username = os.environ.get('ROS2_INFO_USERNAME')
+    _auth_password = os.environ.get('ROS2_INFO_PASSWORD')
+
+    # Rate limiting: track request counts per IP
+    _rate_limit_window = 60  # seconds
+    _rate_limit_max_requests = 100  # max requests per window
+    _request_counts = {}  # ip -> [(timestamp, count)]
+
+    def _get_client_ip():
+        return request.remote_addr or "127.0.0.1"
+
+    def _check_rate_limit():
+        """Check if client IP exceeds rate limit. Returns True if allowed."""
+        ip = _get_client_ip()
+        now = time.time()
+
+        if ip not in _request_counts:
+            _request_counts[ip] = []
+
+        # Remove old entries outside window
+        _request_counts[ip] = [(t, c) for t, c in _request_counts[ip] if now - t < _rate_limit_window]
+
+        # Count total requests in window
+        total = sum(c for _, c in _request_counts[ip])
+
+        if total >= _rate_limit_max_requests:
+            return False
+
+        # Add this request
+        if not _request_counts[ip] or now - _request_counts[ip][-1][0] > 1:
+            _request_counts[ip].append((now, 1))
+        else:
+            t, c = _request_counts[ip][-1]
+            _request_counts[ip][-1] = (t, c + 1)
+
+        return True
+
+    def rate_limit(f):
+        """Decorator to enforce rate limiting."""
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if not _check_rate_limit():
+                return Response('Rate limit exceeded. Try again later.', 429)
+            return f(*args, **kwargs)
+        return decorated
+
+    # Command audit logging
+    _audit_log = []  # List of {timestamp, ip, cmd, result}
+    _audit_log_file = os.path.expanduser("~/.ros2_info_web_audit.log")
+
+    def _audit_log_command(ip, cmd, result):
+        """Log command execution for audit trail."""
+        entry = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "ip": ip,
+            "cmd": cmd,
+            "result": result[:200] if result else "",
+        }
+        _audit_log.append(entry)
+        # Keep last 1000 entries in memory
+        if len(_audit_log) > 1000:
+            _audit_log.pop(0)
+        # Also write to file
+        try:
+            with open(_audit_log_file, "a") as f:
+                f.write(f"{entry['timestamp']} | {entry['ip']} | {entry['cmd']} | {entry['result']}\n")
+        except Exception:
+            pass
+
+    if _auth_username and _auth_password:
+        @app.before_request
+        def require_auth():
+            auth = request.authorization
+            if not auth or auth.username != _auth_username or auth.password != _auth_password:
+                return Response('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="ROS2 Info"'})
 
     def _collect_all():
         data = {}
@@ -29,6 +106,7 @@ def create_app():
         return render_template("index.html")
 
     @app.route("/api/info")
+    @rate_limit
     def api_info():
         data = _collect_all()
         return jsonify(data)
@@ -44,6 +122,7 @@ def create_app():
         return send_file(asset_path, mimetype="image/png", max_age=3600)
 
     @app.route("/api/graph")
+    @rate_limit
     def api_graph():
         """Return node/topic connection graph as JSON."""
         from fetch_info.terminal import build_topic_graph
@@ -52,6 +131,7 @@ def create_app():
         return jsonify(graph)
 
     @app.route("/api/exec", methods=["POST"])
+    @rate_limit
     def api_exec():
         """
         Execute a safe subset of ros2 commands from the web terminal.
@@ -62,6 +142,10 @@ def create_app():
         cmd_str = (body.get("cmd") or "").strip()
         if not cmd_str:
             return jsonify({"output": "Error: empty command"}), 400
+
+        # Audit log the command
+        client_ip = _get_client_ip()
+        _audit_log_command(client_ip, cmd_str, "")
 
         tokens = cmd_str.split()
         verb = tokens[0].lower()
@@ -121,9 +205,13 @@ def create_app():
         except Exception as e:
             out = f"Error: {e}"
 
+        # Update audit log with result
+        _audit_log_command(client_ip, cmd_str, out)
+
         return jsonify({"output": out})
 
     @app.route("/api/status")
+    @rate_limit
     def api_status():
         """Lightweight system status for quick polling (no ROS2 calls)."""
         stats = {"timestamp": time.time()}
@@ -155,6 +243,7 @@ def create_app():
         return jsonify(stats)
 
     @app.route("/api/blog")
+    @rate_limit
     def api_blog():
         """Fetch and parse the official ROS2 blog RSS feed."""
         entries = []
@@ -198,9 +287,64 @@ def create_app():
 
         return jsonify(entries[:12])
 
+    @app.route("/api/audit")
+    @rate_limit
+    def api_audit():
+        """Return recent command audit log (for administrators)."""
+        # Only return last 100 entries
+        recent = _audit_log[-100:] if _audit_log else []
+        return jsonify(recent)
+
+    @app.route("/api/health")
+    def api_health():
+        """Health check endpoint for monitoring."""
+        return jsonify({
+            "status": "healthy",
+            "timestamp": time.time(),
+            "version": "2.4.0"
+        })
+
+    @app.route("/api/health/predict")
+    @rate_limit
+    def api_health_predict():
+        """Predictive health analysis from trend data."""
+        from fetch_info.collector.trends import predict_health
+        hours = int(request.args.get("hours", 24))
+        return jsonify(predict_health(duration_hours=hours))
+
+    @app.route("/api/fleet/check", methods=["POST"])
+    @rate_limit
+    def api_fleet_check():
+        """Check fleet hosts and return alerts."""
+        from fetch_info.collector.fleet import FleetHost, check_alerts, collect_fleet
+        body = request.get_json(silent=True) or {}
+        hosts = body.get("hosts", [])
+        if not hosts:
+            return jsonify({"alerts": [], "message": "no hosts provided"}), 400
+        fleet_hosts = [FleetHost(**h) for h in hosts]
+        results = collect_fleet(fleet_hosts)
+        alerts = check_alerts(results)
+        return jsonify({"results": results, "alerts": alerts})
+
     return app
 
 
-def run_web(host="0.0.0.0", port=8099):
+def _ssl_context(cert=None, key=None):
+    if cert and key:
+        return (cert, key)
+    if cert:
+        return cert
+    cert_dir = os.path.expanduser("~/.ros2_info/certs")
+    auto_cert = os.path.join(cert_dir, "cert.pem")
+    auto_key = os.path.join(cert_dir, "key.pem")
+    if os.path.exists(auto_cert) and os.path.exists(auto_key):
+        return (auto_cert, auto_key)
+    return "adhoc"
+
+
+def run_web(host="0.0.0.0", port=8099, ssl=False, cert=None, key=None):
     app = create_app()
-    app.run(host=host, port=port, debug=False)
+    ctx = _ssl_context(cert, key) if ssl else None
+    protocol = "https" if ctx else "http"
+    print(f"Starting on {protocol}://{host}:{port}")
+    app.run(host=host, port=port, debug=False, ssl_context=ctx)
