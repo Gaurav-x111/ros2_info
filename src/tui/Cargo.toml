@@ -1,0 +1,19 @@
+[package]
+name = "ros2-info-tui"
+version = "0.1.0"
+edition = "2021"
+description = "ROS2 Info TUI — full-screen terminal dashboard for ROS2 developers"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sysinfo = "0.33"
+chrono = "0.4"
+tokio = { version = "1", features = ["full"] }
+portable-pty = "0.8"
+vt100 = "0.15"
+unicode-width = "0.2"
+tiny_http = "0.12"
+libc = "0.2"
