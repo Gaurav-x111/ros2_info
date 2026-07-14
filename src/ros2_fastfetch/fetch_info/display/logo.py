@@ -202,11 +202,45 @@ MAIN_BANNER = r"""
             ╚═══════════════════════════════════════════════════════════════════════════=══=╝
 """
 
-def get_main_banner(theme):
-    """Return the large main banner colored with the theme."""
-    lines = MAIN_BANNER.strip("\n").split('\n')
+# Medium banner — fits ~46+ column terminals
+MEDIUM_BANNER = r"""
+  ╔════════════════════════════════════════════╗
+  ║  ██████╗ ███████╗███████╗ ██████╗██╗  ██╗  ║
+  ║  ██╔══██╗██╔════╝██╔════╝██╔════╝██║  ██║  ║
+  ║  ██████╔╝█████╗  ███████╗██║     ███████║  ║
+  ║  ██╔═══╝ ██╔══╝  ╚════██║██║     ██╔══██║  ║
+  ║  ██║     ███████╗███████║╚██████╗██║  ██║  ║
+  ║  ╚═╝     ╚══════╝╚══════╝ ╚═════╝╚═╝  ╚═╝  ║
+  ║   ⬡ fastfetch for ROS2 — by roboticists    ║
+  ╚════════════════════════════════════════════╝
+"""
+
+
+def _colorize_banner(raw: str, theme: dict) -> Text:
+    """Apply theme color to a raw multi-line banner string."""
     text = Text()
     color = theme.get("logo_color1", "#22D3EE")
-    for line in lines:
-        text.append("  " + line + "\n", style=f"bold {color}")
+    for line in raw.strip("\n").split("\n"):
+        text.append(line.rstrip() + "\n", style=f"bold {color}")
     return text
+
+
+def get_main_banner(theme, width: int | None = None):
+    """Return a banner whose size adapts to the terminal width.
+
+    Tiers:
+      * width >= 90  -> full ASCII art banner
+      * width >= 50  -> medium compact banner
+      * width <  50  -> single-line compact title
+    """
+    import shutil as _sh
+    if width is None:
+        width = _sh.get_terminal_size((80, 24)).columns
+
+    if width >= 90:
+        return _colorize_banner(MAIN_BANNER, theme)
+    if width >= 50:
+        return _colorize_banner(MEDIUM_BANNER, theme)
+    # Compact one-liner for very narrow terminals
+    color = theme.get("logo_color1", "#22D3EE")
+    return Text("  ≈ ROS2 Info — fastfetch for ROS2 ≈\n", style=f"bold {color}")
