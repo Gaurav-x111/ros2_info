@@ -67,6 +67,7 @@ The Python collector is called in the background for ROS 2 data — if you have 
 - **Git integration** — status, diff, commit, branches, GitHub issues/PRs via `gh`
 - **Command Palette** — fuzzy file open (`Ctrl+P`), ROS 2 tool launcher (`Ctrl+Shift+P`)
 - **Plugin system** — in-process Rust plugin API: add dashboard tabs, terminal commands, and lifecycle hooks without forking the core
+- **Cross-container visibility** — `ros2_info compose` aggregates nodes/topics across all running Docker containers (incl. docker-compose stacks on isolated networks/domains) via `docker exec`, so the dashboard shows the whole system, not just one DDS domain
 - **Single static binary** — built for Raspberry Pi / Jetson / SSH, not just laptops
 
 ---

@@ -810,6 +810,7 @@ HELP_TEXT = """
     launch-verify / lv      Verify launch files for issues
     bag-analyze / ba        Analyze bag file health & timeline
     fleet <h1> [h2...]      Multi-robot fleet status
+    compose                 Whole-system view across Docker containers
 
   ACTIONS
     pub <topic> <type> <yaml> [--once]

@@ -326,6 +326,14 @@ def create_app():
         alerts = check_alerts(results)
         return jsonify({"results": results, "alerts": alerts})
 
+    @app.route("/api/compose")
+    @rate_limit
+    def api_compose():
+        """Whole-system ROS2 graph aggregated across Docker containers."""
+        from fetch_info.collector.docker_fleet import collect_docker_fleet
+        timeout = int(request.args.get("timeout", 5))
+        return jsonify(collect_docker_fleet(timeout=timeout))
+
     return app
 
 

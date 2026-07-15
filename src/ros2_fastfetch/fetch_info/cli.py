@@ -1292,6 +1292,77 @@ def cmd_fleet(hosts, theme, out_json, subnet, discover, user, key, port):
     console.print()
 
 
+@main.command("compose")
+@click.option("--theme", "-t", default="default", type=click.Choice(list_themes()))
+@click.option("--json", "out_json", is_flag=True, help="Output raw JSON")
+@click.option("--timeout", default=5, help="Per-container discovery timeout (s)")
+def cmd_compose(theme, out_json, timeout):
+    """🐳 Whole-system view across Docker containers (docker-compose).
+
+    Aggregates the ROS2 node/topic/service/action graph by running
+    ``ros2 node list`` *inside every running container* via ``docker exec``
+    and merging the results. This works even when containers sit on isolated
+    Docker networks or different ROS_DOMAIN_IDs, where a single local
+    ``ros2 node list`` would only ever see one DDS domain.
+
+    Examples:
+      ros2_info compose
+      ros2_info compose --json
+    """
+    from fetch_info.collector.docker_fleet import collect_docker_fleet
+    from rich.table import Table, box
+
+    console = Console()
+    t = get_theme(theme)
+
+    data = collect_docker_fleet(timeout=timeout)
+
+    if out_json:
+        click.echo(json.dumps(data, indent=2, default=str))
+        return
+
+    if not data["docker_available"]:
+        console.print(f"\n  [{t['error_style']}]Docker not available — install Docker or run this on the Docker host.[/]\n")
+        return
+
+    console.print(
+        f"\n  [bold {t['logo_color1']}]🐳 Compose System ({data['container_count']} containers, "
+        f"{data['ros_container_count']} ROS2)[/]"
+    )
+    if data["domain_ids"]:
+        console.print(
+            f"  [{t['dim_style']}]Domains seen: {', '.join(data['domain_ids'])}[/]"
+        )
+    console.print()
+
+    tbl = Table(border_style=t["panel_border"], box=box.MINIMAL_HEAVY_HEAD)
+    tbl.add_column("Container", style=f"bold {t['key_style']}")
+    tbl.add_column("Image", style=t["value_style"])
+    tbl.add_column("Distro", style=t["value_style"])
+    tbl.add_column("Domain", style=t["value_style"])
+    tbl.add_column("Nodes", style=t["value_style"], justify="right")
+    tbl.add_column("Topics", style=t["value_style"], justify="right")
+
+    for c in data["containers"]:
+        if c.get("is_ros"):
+            distro = c.get("ros_distro") or f"[{t['dim_style']}]—[/]"
+            domain = c.get("ros_domain_id") or "0"
+            nodes = str(len(c.get("nodes", [])))
+            topics = str(len(c.get("topics", [])))
+        else:
+            distro = f"[{t['dim_style']}]non-ROS[/]"
+            domain = f"[{t['dim_style']}]—[/]"
+            nodes = f"[{t['dim_style']}]—[/]"
+            topics = f"[{t['dim_style']}]—[/]"
+        tbl.add_row(c.get("name", "?"), c.get("image", ""), distro, domain, nodes, topics)
+
+    console.print(tbl)
+    console.print(
+        f"\n  [{t['value_style']}]Merged unique topics:[/] {data['unique_topics']}   "
+        f"[{t['value_style']}]Total nodes:[/] {data['total_nodes']}\n"
+    )
+
+
 @main.command("tui")
 @click.option("--release", is_flag=True, default=True, help="Use release build")
 def cmd_tui(release):

@@ -68,6 +68,7 @@ Default invocation with no subcommand prints the FastFetch-style overview.
 | 25 | `ros2_info fleet <host...> [--discover] [--subnet S]` | Multi-host / multi-robot fleet view |
 | 26 | `ros2_info tui` | Launch the Rust TUI |
 | 27 | `ros2_info sandbox <action>` | Sandbox manager (create/clone/switch/export/import) |
+| 28 | `ros2_info compose [--json] [--timeout S]` | Whole-system ROS2 view across Docker containers |
 
 ---
 
@@ -124,6 +125,7 @@ Tab-completion is live against discovered topics/nodes.
 | `lv` | `launch-verify` |
 | `ba` | `bag-analyze` |
 | `fleet` | Fleet view |
+| `compose` | Whole-system view across Docker containers |
 | `benchmark` | Performance bench |
 | `doctor` / `diagnose` | Health checks |
 | `matrix` | Distro matrix |
