@@ -1644,10 +1644,8 @@ fn send_to_terminal(app: &mut App, key: &crossterm::event::KeyEvent) {
                         let args = parts.next().unwrap_or("").trim();
                         match app.plugin_manager.run_command(name, args) {
                             Some(output) => {
-                                app.terminal_mgr.write_ai_session_idx(
-                                    sess_idx,
-                                    &format!("{}\n\n", output),
-                                );
+                                app.terminal_mgr
+                                    .write_ai_session_idx(sess_idx, &format!("{}\n\n", output));
                             }
                             None => {
                                 app.terminal_mgr.write_ai_session_idx(

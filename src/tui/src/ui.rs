@@ -1246,7 +1246,10 @@ fn draw_plugins_sidebar(frame: &mut Frame, area: Rect, app: &App) {
     for (name, version) in &plugins {
         lines.push(Line::from(vec![
             Span::styled("  ◆ ", Style::default().fg(ACCENT)),
-            Span::styled(name.clone(), Style::default().fg(FG).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                name.clone(),
+                Style::default().fg(FG).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(format!(" v{}", version), Style::default().fg(DIM)),
         ]));
     }

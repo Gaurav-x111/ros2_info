@@ -59,7 +59,9 @@ impl DashboardTab for ExampleTab {
         let lines = vec![
             Line::from(Span::styled(
                 " Example plugin tab",
-                Style::default().fg(Color::Green).add_modifier(ratatui::style::Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(ratatui::style::Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(" This tab is contributed by a plugin."),
@@ -103,4 +105,3 @@ mod tests {
         assert_eq!(p.terminal_commands()[0].name(), "battery");
     }
 }
-
