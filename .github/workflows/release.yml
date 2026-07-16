@@ -49,6 +49,6 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Upload binary
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: src/tui/target/${{ matrix.target }}/release/ros2-info-tui
