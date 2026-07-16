@@ -11,19 +11,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
         with:
           python-version: '3.12'
       - name: Install dependencies
         run: |
-          uv pip install --system -e src/ros2_fastfetch/ click rich psutil flask climage pillow pyyaml lark
-          uv pip install --system flake8 mypy
+          uv venv
+          source .venv/bin/activate
+          uv pip install -e src/ros2_fastfetch/ click rich psutil flask climage pillow pyyaml lark
+          uv pip install flake8 mypy
       - name: Run flake8
         run: |
+          source .venv/bin/activate
           flake8 src/ros2_fastfetch/fetch_info --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 src/ros2_fastfetch/fetch_info --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Run mypy (if type hints present)
         run: |
+          source .venv/bin/activate
           mypy src/ros2_fastfetch/fetch_info --ignore-missing-imports || true
   rust:
     name: Rust TUI
