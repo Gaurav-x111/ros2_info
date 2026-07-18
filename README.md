@@ -17,7 +17,7 @@ A Rust terminal IDE for ROS 2 developers — VS Code energy, zero Electron weigh
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20SSH-blueviolet)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Stars](https://img.shields.io/github/stars/Gaurav-x111/ros2_info?style=social)](https://github.com/Gaurav-x111/ros2_info)
-[![Works with GitHub](https://github.com/logos/_next/static/media/logo-01.a1916c76.png)](https://github.com/developer/register)
+[![GitHub Developer Program](https://img.shields.io/badge/GitHub-Developer%20Program-181717?logo=github&logoColor=white)](https://github.com/developer/register)
 
 > **GitHub Developer Program member** — `ros2_info` integrates with the GitHub REST API. Uses the Invertocat mark to show integration, per [GitHub's logo guidelines](https://github.com/logos).
 
