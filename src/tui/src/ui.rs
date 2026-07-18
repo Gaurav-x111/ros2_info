@@ -1586,10 +1586,18 @@ fn draw_git_sidebar(frame: &mut Frame, area: Rect, app: &App) {
     // GitHub section
     if !gs.issues.is_empty() {
         lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled(
-            format!("  GitHub Issues ({})", gs.issues.len()),
-            Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
-        )));
+        lines.push(Line::from(vec![
+            Span::styled(
+                format!("  GitHub Issues ({})", gs.issues.len()),
+                Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                "  c: new",
+                Style::default()
+                    .fg(DIM)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]));
         for issue in gs.issues.iter().take(5) {
             let (sym, sc) = if issue.state == "open" {
                 ("○", OK)
@@ -1604,6 +1612,22 @@ fn draw_git_sidebar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::styled(&issue.title, Style::default().fg(DIM)),
             ]));
         }
+    } else {
+        // When there are no (loaded) issues, still surface the create-issue
+        // action so users discover the GitHub integration.
+        lines.push(Line::from(""));
+        lines.push(Line::from(vec![
+            Span::styled(
+                "  GitHub Issues",
+                Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                "  c: new",
+                Style::default()
+                    .fg(DIM)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]));
     }
 
     if !gs.prs.is_empty() {
@@ -1631,6 +1655,32 @@ fn draw_git_sidebar(frame: &mut Frame, area: Rect, app: &App) {
 
     let list = List::new(lines).style(Style::default().bg(BG));
     frame.render_widget(list, rest);
+
+    // "Create Issue" inline prompt (captured by `app.issue_input`).
+    if let Some(ref text) = app.issue_input {
+        let (ix, iy, iw, ih) = (area.x, area.y + area.height.saturating_sub(1), area.width, 1);
+        if ih > 0 {
+            let line = Line::from(vec![
+                Span::styled(
+                    " New Issue: ",
+                    Style::default()
+                        .fg(WARN)
+                        .add_modifier(Modifier::BOLD)
+                        .bg(BG),
+                ),
+                Span::styled(text.as_str(), Style::default().fg(FG).bg(BG)),
+                Span::styled("█", Style::default().fg(ACCENT).bg(BG)),
+                Span::styled(
+                    "  Enter: create  Esc: cancel",
+                    Style::default().fg(DIM).bg(BG),
+                ),
+            ]);
+            frame.render_widget(
+                Paragraph::new(line).style(Style::default().bg(BG)),
+                Rect::new(ix, iy, iw, ih),
+            );
+        }
+    }
 }
 
 fn draw_explorer_sidebar(frame: &mut Frame, area: Rect, app: &mut App) {

@@ -16,6 +16,10 @@ A Rust terminal IDE for ROS 2 developers — VS Code energy, zero Electron weigh
 [![ROS 2](https://img.shields.io/badge/ROS_2-Humble%20%7C%20Jazzy%20%7C%20Rolling-22D3EE?logo=ros&logoColor=white)](https://docs.ros.org)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20SSH-blueviolet)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Stars](https://img.shields.io/github/stars/Gaurav-x111/ros2_info?style=social)](https://github.com/Gaurav-x111/ros2_info)
+[![Works with GitHub](https://github.com/logos/_next/static/media/logo-01.a1916c76.png)](https://github.com/developer/register)
+
+> **GitHub Developer Program member** — `ros2_info` integrates with the GitHub REST API. Uses the Invertocat mark to show integration, per [GitHub's logo guidelines](https://github.com/logos).
 
 </div>
 
@@ -265,6 +269,31 @@ The short version: fork, branch, `cargo build`, make it work, make it clean, ope
 Built with [Ratatui](https://ratatui.rs), [Crossterm](https://github.com/crossterm-rs/crossterm), and stubbornness.
 
 Started from a Python fastfetch-style tool with 39 stars before this Rust rewrite.
+
+---
+
+## GitHub integration
+
+`ros2_info` is a participant in the **GitHub Developer Program** — it integrates
+directly with the [GitHub REST API](https://docs.github.com/en/rest) to surface
+issues and pull requests for the repository you're working in, and to create
+issues from the TUI.
+
+- Issues and PRs are fetched from `api.github.com` and rendered in the Git
+  sidebar's **Issues** / **Pull Requests** tabs.
+- Authenticated requests are used automatically when a token is present
+  (higher rate limits, private repos):
+
+  ```bash
+  export GITHUB_TOKEN=ghp_your_token_here
+  ```
+
+- If the API is unreachable or no token is set, the tool gracefully falls back
+  to the [`gh` CLI](https://cli.github.com) when it's installed.
+
+**Support contact:** open an issue at
+[github.com/Gaurav-x111/ros2_info/issues](https://github.com/Gaurav-x111/ros2_info/issues)
+or email **gauravshah0777@gmail.com**.
 
 ---
 

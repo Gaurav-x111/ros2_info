@@ -277,14 +277,125 @@ pub fn github_list_prs(repo: &str) -> Vec<GitHubPr> {
 }
 
 pub fn github_create_issue(repo: &str, title: &str, body: &str) -> Result<String, String> {
-    let (stdout, stderr, success) = run_gh(&[
-        "issue", "create", "--repo", repo, "--title", title, "--body", body,
-    ]);
-    if success {
-        Ok(stdout.trim().to_string())
-    } else {
-        Err(stderr.trim().to_string())
+    // Prefer the direct GitHub REST API; fall back to the `gh` CLI if the API
+    // call fails (e.g. no network / no token / `gh` installed instead).
+    match github_api_create_issue(repo, title, body) {
+        Ok(url) => Ok(url),
+        Err(_) => {
+            let (stdout, stderr, success) = run_gh(&[
+                "issue", "create", "--repo", repo, "--title", title, "--body", body,
+            ]);
+            if success {
+                Ok(stdout.trim().to_string())
+            } else {
+                Err(stderr.trim().to_string())
+            }
+        }
     }
+}
+
+/// Optional GitHub personal access token, read from the `GITHUB_TOKEN`
+/// environment variable. Used only for authenticated REST API calls.
+fn github_token() -> Option<String> {
+    std::env::var("GITHUB_TOKEN").ok().filter(|s| !s.is_empty())
+}
+
+/// A small, dependency-light GitHub REST API client. This is the integration
+/// that makes `ros2_info` a participant in the GitHub Developer Program: it
+/// talks to `api.github.com` directly instead of shelling out to `gh`.
+fn github_api_get(path: &str) -> Result<serde_json::Value, String> {
+    let url = format!("https://api.github.com{}", path);
+    let mut req = ureq::get(&url)
+        .set("Accept", "application/vnd.github+json")
+        .set("User-Agent", "ros2-info-tui")
+        .set("X-GitHub-Api-Version", "2022-11-28");
+    if let Some(token) = github_token() {
+        req = req.set("Authorization", &format!("Bearer {}", token));
+    }
+    req.call()
+        .map_err(|e| format!("GitHub API request failed: {}", e))?
+        .into_json()
+        .map_err(|e| format!("GitHub API decode failed: {}", e))
+}
+
+fn github_api_post(path: &str, payload: &serde_json::Value) -> Result<serde_json::Value, String> {
+    let url = format!("https://api.github.com{}", path);
+    let mut req = ureq::post(&url)
+        .set("Accept", "application/vnd.github+json")
+        .set("User-Agent", "ros2-info-tui")
+        .set("X-GitHub-Api-Version", "2022-11-28");
+    if let Some(token) = github_token() {
+        req = req.set("Authorization", &format!("Bearer {}", token));
+    }
+    req.send_json(payload.clone())
+        .map_err(|e| format!("GitHub API request failed: {}", e))?
+        .into_json()
+        .map_err(|e| format!("GitHub API decode failed: {}", e))
+}
+
+/// List issues for `owner/repo` via the GitHub REST API.
+pub fn github_api_list_issues(repo: &str) -> Result<Vec<GitHubIssue>, String> {
+    let data = github_api_get(&format!(
+        "/repos/{}/issues?state=all&per_page=50&sort=created&direction=desc",
+        repo
+    ))?;
+    let arr = data.as_array().ok_or_else(|| "unexpected response".to_string())?;
+    let mut issues = Vec::new();
+    for v in arr {
+        // The issues endpoint also returns PRs; skip those.
+        if v.get("pull_request").is_some() {
+            continue;
+        }
+        let labels: Vec<String> = v["labels"]
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|l| l["name"].as_str().map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap_or_default();
+        issues.push(GitHubIssue {
+            number: v["number"].as_u64().unwrap_or(0) as u32,
+            title: v["title"].as_str().unwrap_or("").to_string(),
+            state: v["state"].as_str().unwrap_or("").to_string(),
+            author: v["user"]["login"].as_str().unwrap_or("").to_string(),
+            labels,
+            created_at: v["created_at"].as_str().unwrap_or("").to_string(),
+        });
+    }
+    Ok(issues)
+}
+
+/// List pull requests for `owner/repo` via the GitHub REST API.
+pub fn github_api_list_prs(repo: &str) -> Result<Vec<GitHubPr>, String> {
+    let data = github_api_get(&format!(
+        "/repos/{}/pulls?state=all&per_page=50&sort=created&direction=desc",
+        repo
+    ))?;
+    let arr = data.as_array().ok_or_else(|| "unexpected response".to_string())?;
+    let mut prs = Vec::new();
+    for v in arr {
+        prs.push(GitHubPr {
+            number: v["number"].as_u64().unwrap_or(0) as u32,
+            title: v["title"].as_str().unwrap_or("").to_string(),
+            state: v["state"].as_str().unwrap_or("").to_string(),
+            author: v["user"]["login"].as_str().unwrap_or("").to_string(),
+            branch: v["head"]["ref"].as_str().unwrap_or("").to_string(),
+            mergeable: v["mergeable"].as_bool().unwrap_or(false),
+        });
+    }
+    Ok(prs)
+}
+
+/// Create an issue for `owner/repo` via the GitHub REST API.
+/// Returns the new issue URL on success.
+pub fn github_api_create_issue(repo: &str, title: &str, body: &str) -> Result<String, String> {
+    let payload = serde_json::json!({ "title": title, "body": body });
+    let data = github_api_post(&format!("/repos/{}/issues", repo), &payload)?;
+    data["html_url"]
+        .as_str()
+        .map(|s| s.to_string())
+        .ok_or_else(|| "no html_url in response".to_string())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -326,7 +437,12 @@ impl GitState {
     }
 
     pub fn refresh_github(&mut self, repo: &str) {
-        self.issues = github_list_issues(repo);
-        self.prs = github_list_prs(repo);
+        // Prefer the direct GitHub REST API; fall back to the `gh` CLI so the
+        // Issues/PRs panel still works in environments without network access
+        // to api.github.com or without a GITHUB_TOKEN set.
+        self.issues = github_api_list_issues(repo)
+            .unwrap_or_else(|_| github_list_issues(repo));
+        self.prs = github_api_list_prs(repo)
+            .unwrap_or_else(|_| github_list_prs(repo));
     }
 }

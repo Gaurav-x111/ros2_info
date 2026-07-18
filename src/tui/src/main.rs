@@ -582,6 +582,54 @@ fn handle_key(app: &mut App, key: crossterm::event::KeyEvent) {
         return;
     }
 
+    // GitHub "Create Issue" input mode. The Git sidebar captures typing into
+    // `issue_input`; on Enter we POST to the GitHub REST API via `git.rs`.
+    if app.issue_input.is_some() {
+        match key.code {
+            KeyCode::Esc => {
+                app.issue_input = None;
+            }
+            KeyCode::Enter => {
+                if let Some(ref text) = app.issue_input.clone() {
+                    let title = text.trim().to_string();
+                    if !title.is_empty() {
+                        if let Some(repo) = App::current_github_repo() {
+                            let body = format!(
+                                "Issue created from ros2_info TUI at {}",
+                                chrono::Local::now().format("%Y-%m-%d %H:%M")
+                            );
+                            match crate::git::github_create_issue(&repo, &title, &body) {
+                                Ok(url) => app.set_status(
+                                    format!("Created issue: {}", url),
+                                    5.0,
+                                ),
+                                Err(e) => app.set_status(
+                                    format!("Failed to create issue: {}", e),
+                                    5.0,
+                                ),
+                            }
+                        } else {
+                            app.set_status("No GitHub remote on this repo.".into(), 3.0);
+                        }
+                    }
+                }
+                app.issue_input = None;
+            }
+            KeyCode::Backspace => {
+                if let Some(ref mut text) = app.issue_input {
+                    text.pop();
+                }
+            }
+            KeyCode::Char(c) => {
+                if let Some(ref mut text) = app.issue_input {
+                    text.push(c);
+                }
+            }
+            _ => {}
+        }
+        return;
+    }
+
     // Generic text-input prompt (New File / New Folder / Rename).
     if app.prompt.is_some() {
         match key.code {
@@ -1171,6 +1219,15 @@ fn handle_sidebar_key(app: &mut App, key: crossterm::event::KeyEvent) {
         if let KeyCode::Char('o') | KeyCode::Enter = key.code {
             let _ = std::process::Command::new("xdg-open").arg(".").spawn();
             app.set_status("Opening current folder…".into(), 2.0);
+        }
+        return;
+    }
+    // Git sidebar: a single action — `c` opens the "Create Issue" prompt that
+    // posts to the GitHub REST API. Everything else is read-only display.
+    if app.active_activity == Activity::Git {
+        if let KeyCode::Char('c') = key.code {
+            app.issue_input = Some(String::new());
+            return;
         }
         return;
     }

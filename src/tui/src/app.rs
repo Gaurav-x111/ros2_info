@@ -589,6 +589,11 @@ pub struct App {
 
     pub save_as_input: Option<String>,
 
+    /// Inline prompt for creating a GitHub issue via the API. When `Some`,
+    /// the Git sidebar captures typing into this string; Enter creates the
+    /// issue (requires write access to the repo, which needs a `GITHUB_TOKEN`).
+    pub issue_input: Option<String>,
+
     /// Editor key-binding scheme (Normal vs Neovim). Persisted to disk so the
     /// user's choice survives restarts.
     pub keybind_mode: KeybindMode,
@@ -677,6 +682,7 @@ impl App {
 
             git: crate::git::GitState::new(),
             save_as_input: None,
+            issue_input: None,
             keybind_mode: Self::load_keybind_mode(),
             ctx_menu: None,
             ctx_menu_sel: 0,
