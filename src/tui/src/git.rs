@@ -339,7 +339,9 @@ pub fn github_api_list_issues(repo: &str) -> Result<Vec<GitHubIssue>, String> {
         "/repos/{}/issues?state=all&per_page=50&sort=created&direction=desc",
         repo
     ))?;
-    let arr = data.as_array().ok_or_else(|| "unexpected response".to_string())?;
+    let arr = data
+        .as_array()
+        .ok_or_else(|| "unexpected response".to_string())?;
     let mut issues = Vec::new();
     for v in arr {
         // The issues endpoint also returns PRs; skip those.
@@ -372,7 +374,9 @@ pub fn github_api_list_prs(repo: &str) -> Result<Vec<GitHubPr>, String> {
         "/repos/{}/pulls?state=all&per_page=50&sort=created&direction=desc",
         repo
     ))?;
-    let arr = data.as_array().ok_or_else(|| "unexpected response".to_string())?;
+    let arr = data
+        .as_array()
+        .ok_or_else(|| "unexpected response".to_string())?;
     let mut prs = Vec::new();
     for v in arr {
         prs.push(GitHubPr {
@@ -440,9 +444,7 @@ impl GitState {
         // Prefer the direct GitHub REST API; fall back to the `gh` CLI so the
         // Issues/PRs panel still works in environments without network access
         // to api.github.com or without a GITHUB_TOKEN set.
-        self.issues = github_api_list_issues(repo)
-            .unwrap_or_else(|_| github_list_issues(repo));
-        self.prs = github_api_list_prs(repo)
-            .unwrap_or_else(|_| github_list_prs(repo));
+        self.issues = github_api_list_issues(repo).unwrap_or_else(|_| github_list_issues(repo));
+        self.prs = github_api_list_prs(repo).unwrap_or_else(|_| github_list_prs(repo));
     }
 }

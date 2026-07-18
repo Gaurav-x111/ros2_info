@@ -1593,9 +1593,7 @@ fn draw_git_sidebar(frame: &mut Frame, area: Rect, app: &App) {
             ),
             Span::styled(
                 "  c: new",
-                Style::default()
-                    .fg(DIM)
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(DIM).add_modifier(Modifier::BOLD),
             ),
         ]));
         for issue in gs.issues.iter().take(5) {
@@ -1623,9 +1621,7 @@ fn draw_git_sidebar(frame: &mut Frame, area: Rect, app: &App) {
             ),
             Span::styled(
                 "  c: new",
-                Style::default()
-                    .fg(DIM)
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(DIM).add_modifier(Modifier::BOLD),
             ),
         ]));
     }
@@ -1658,7 +1654,12 @@ fn draw_git_sidebar(frame: &mut Frame, area: Rect, app: &App) {
 
     // "Create Issue" inline prompt (captured by `app.issue_input`).
     if let Some(ref text) = app.issue_input {
-        let (ix, iy, iw, ih) = (area.x, area.y + area.height.saturating_sub(1), area.width, 1);
+        let (ix, iy, iw, ih) = (
+            area.x,
+            area.y + area.height.saturating_sub(1),
+            area.width,
+            1,
+        );
         if ih > 0 {
             let line = Line::from(vec![
                 Span::styled(

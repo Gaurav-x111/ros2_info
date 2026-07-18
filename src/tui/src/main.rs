@@ -599,14 +599,10 @@ fn handle_key(app: &mut App, key: crossterm::event::KeyEvent) {
                                 chrono::Local::now().format("%Y-%m-%d %H:%M")
                             );
                             match crate::git::github_create_issue(&repo, &title, &body) {
-                                Ok(url) => app.set_status(
-                                    format!("Created issue: {}", url),
-                                    5.0,
-                                ),
-                                Err(e) => app.set_status(
-                                    format!("Failed to create issue: {}", e),
-                                    5.0,
-                                ),
+                                Ok(url) => app.set_status(format!("Created issue: {}", url), 5.0),
+                                Err(e) => {
+                                    app.set_status(format!("Failed to create issue: {}", e), 5.0)
+                                }
                             }
                         } else {
                             app.set_status("No GitHub remote on this repo.".into(), 3.0);
