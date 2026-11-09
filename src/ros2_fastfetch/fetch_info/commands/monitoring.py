@@ -9,7 +9,7 @@ from rich.table import Table
 from rich import box
 
 from fetch_info.display.themes import get_theme
-from fetch_info.collector import ros2, system
+from fetch_info.collector import pulse, ros2, system
 from fetch_info.render import create_table, print_error, print_success, print_status
 
 
@@ -224,10 +224,23 @@ def cmd_benchmark(duration: int = 10, theme: str = "default", out_json: bool = F
     topics = ros2.get_active_topics(timeout=3)
     nodes = ros2.get_active_nodes(timeout=3)
 
+    # ros2_pulse, when its exporter is up, has every probed topic's rate in one
+    # read. Topics it does not cover fall back to `ros2 topic hz`, one at a time.
+    pulse_rates = pulse.get_pulse_rates()
     topic_rates = {}
+    rate_source = {}
+    hz_budget = 10
     with console.status("[cyan]Measuring topic rates...", spinner="dots"):
-        for tp in topics[:10]:
+        for tp in topics:
             name = tp["name"]
+            if name in pulse_rates:
+                topic_rates[name] = f"{pulse_rates[name]:.2f} Hz"
+                rate_source[name] = "ros2_pulse"
+                continue
+            if hz_budget == 0:
+                continue
+            hz_budget -= 1
+            rate_source[name] = "topic hz"
             try:
                 out = subprocess.run(
                     ["ros2", "topic", "hz", name, "--window", "10"],
@@ -245,6 +258,7 @@ def cmd_benchmark(duration: int = 10, theme: str = "default", out_json: bool = F
             "topic_count": len(topics),
             "node_count": len(nodes),
             "topic_rates": topic_rates,
+            "topic_rate_source": rate_source,
             "cpu_avg": sys_info.get("cpu", {}),
             "memory": sys_info.get("memory"),
         }, indent=2, default=str))
@@ -254,8 +268,9 @@ def cmd_benchmark(duration: int = 10, theme: str = "default", out_json: bool = F
         tbl = create_table(title="Topic Rates", border_style=t["panel_border"])
         tbl.add_column("Topic", style=f"bold {t['key_style']}")
         tbl.add_column("Rate", style=t["value_style"])
+        tbl.add_column("Source", style=t["dim_style"])
         for name, rate in topic_rates.items():
-            tbl.add_row(name, rate)
+            tbl.add_row(name, rate, rate_source.get(name, ""))
         console.print(tbl)
         console.print()
 

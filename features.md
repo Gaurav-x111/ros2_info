@@ -61,7 +61,7 @@ Default invocation with no subcommand prints the FastFetch-style overview.
 | 18 | `ros2_info doctor` | Health checks (ROS not sourced, DDS mismatch, missing env, broken launch, bad YAML) |
 | 19 | `ros2_info diagnose` | Alias of `doctor` |
 | 20 | `ros2_info matrix` | Distro / version-compat matrix |
-| 21 | `ros2_info benchmark [-t sec]` | Performance benchmark |
+| 21 | `ros2_info benchmark [-t sec]` | Performance benchmark (topic rates from [ros2_pulse](https://github.com/TanayK07/ros2_pulse) when `pulse-export` runs, else `ros2 topic hz`; `ROS2_PULSE_METRICS_URL` overrides the exporter URL) |
 | 22 | `ros2_info trend [-H hours] [--record\|--chart\|--daemon]` | Historical trends / session capture |
 | 23 | `ros2_info launch-verify <path>` (alias `lv`) | Validate a launch file + dependencies |
 | 24 | `ros2_info bag-analyze <bag> [--compare other]` (alias `ba`) | rosbag forensics / diff |
